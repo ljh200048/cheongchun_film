@@ -42,6 +42,9 @@ export interface SupporterApplication {
   motive: string;
   instagramUrl?: string;
   status: 'received' | 'reviewed' | 'accepted' | 'declined';
+  region?: string;
+  interests?: string;
+  availableDays?: string;
   createdAt: any;
 }
 

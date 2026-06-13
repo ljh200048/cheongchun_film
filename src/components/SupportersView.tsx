@@ -10,6 +10,9 @@ interface SupportersViewProps {
     introduction: string;
     motive: string;
     instagramUrl?: string;
+    region: string;
+    interests: string;
+    availableDays: string;
   }) => Promise<void>;
 }
 
@@ -22,13 +25,16 @@ export default function SupportersView({ onSubmit }: SupportersViewProps) {
   const [introduction, setIntroduction] = useState('');
   const [motive, setMotive] = useState('');
   const [instagramUrl, setInstagramUrl] = useState('');
+  const [region, setRegion] = useState('');
+  const [interests, setInterests] = useState('기획/촬영 Crew');
+  const [availableDays, setAvailableDays] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!applicantName || !phone || !email || !introduction || !motive) {
+    if (!applicantName || !phone || !email || !introduction || !motive || !region || !interests || !availableDays) {
       alert('필수 입력 항목들을 전부 작성해주시기 바랍니다.');
       return;
     }
@@ -42,8 +48,12 @@ export default function SupportersView({ onSubmit }: SupportersViewProps) {
         email,
         introduction,
         motive,
-        instagramUrl: instagramUrl || undefined
+        instagramUrl: instagramUrl || undefined,
+        region,
+        interests,
+        availableDays
       });
+      alert('서포터즈 신청이 완료되었습니다.');
       setIsSuccess(true);
     } catch (err) {
       console.error(err);
@@ -178,6 +188,49 @@ export default function SupportersView({ onSubmit }: SupportersViewProps) {
               required
             />
           </div>
+        </div>
+
+        {/* Region and Available Days Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="block text-[10px] uppercase font-bold tracking-wider text-stone-605">사는 지역 *</label>
+            <input
+              type="text"
+              value={region}
+              onChange={e => setRegion(e.target.value)}
+              placeholder="예: 청주시 상당구"
+              className="w-full bg-white border border-stone-250 rounded-lg p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28]"
+              required
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-[10px] uppercase font-bold tracking-wider text-stone-605">참여 가능 요일 *</label>
+            <input
+              type="text"
+              value={availableDays}
+              onChange={e => setAvailableDays(e.target.value)}
+              placeholder="예: 주말 전체, 평일 저녁"
+              className="w-full bg-white border border-stone-250 rounded-lg p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28]"
+              required
+            />
+          </div>
+        </div>
+
+        {/* Interests Selector */}
+        <div className="space-y-1">
+          <label className="block text-[10px] uppercase font-bold tracking-wider text-stone-605 font-sans">관심 분야 *</label>
+          <select
+            value={interests}
+            onChange={e => setInterests(e.target.value)}
+            className="w-full bg-white border border-stone-250 rounded-lg p-[#A59E92] p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28] h-[38px]"
+            required
+          >
+            <option value="기획/촬영 Crew">기획/촬영 Crew (다큐멘터리 기획 및 촬영 보조)</option>
+            <option value="스토리/인터뷰 Crew">스토리/인터뷰 Crew (만담 주도, 녹취 및 아카이빙)</option>
+            <option value="현상/인화 Crew">현상/인화 Crew (아날로그 인화 및 스튜디오 서포트)</option>
+            <option value="홍보/디자인 Crew">홍보/디자인 Crew (SNS 관리, 홍보물 및 아카이브집 제작)</option>
+          </select>
         </div>
 
         {/* Self Intro */}

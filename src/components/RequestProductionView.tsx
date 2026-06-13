@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, CheckCircle } from 'lucide-react';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase';
 import { CategoryType } from '../types';
 
 interface RequestProductionViewProps {
@@ -20,6 +22,9 @@ export default function RequestProductionView({ onSubmit }: RequestProductionVie
   const [age, setAge] = useState<number>(24);
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [instagramId, setInstagramId] = useState('');
+  const [preferredDate, setPreferredDate] = useState('');
+  const [preferredPlace, setPreferredPlace] = useState('');
   const [storyTitle, setStoryTitle] = useState('');
   const [storyDetails, setStoryDetails] = useState('');
   const [preferredType, setPreferredType] = useState<CategoryType>('video');
@@ -36,6 +41,21 @@ export default function RequestProductionView({ onSubmit }: RequestProductionVie
 
     setIsSubmitting(true);
     try {
+      // Create productionRequests entry ID and write payload
+      const requestId = `prod-req-${Date.now()}`;
+      await setDoc(doc(db, 'productionRequests', requestId), {
+        name: applicantName,
+        phone: phone,
+        instagramId: instagramId,
+        preferredType: preferredType,
+        preferredDate: preferredDate,
+        preferredPlace: preferredPlace,
+        storyDetails: storyDetails,
+        status: 'received',
+        createdAt: serverTimestamp()
+      });
+
+      // Submit to application schema as well to maintain dashboard synchrony
       await onSubmit({
         applicantName,
         age: Number(age),
@@ -45,10 +65,12 @@ export default function RequestProductionView({ onSubmit }: RequestProductionVie
         storyDetails,
         preferredType
       });
+
+      alert('제작 신청이 완료되었습니다.');
       setIsSuccess(true);
     } catch (err) {
       console.error(err);
-      alert('신청 처리 중 문제가 발생했습니다. 네트워크 상태를 확인해주세요.');
+      alert('신청 저장 중 오류가 발생했습니다.');
     } finally {
       setIsSubmitting(false);
     }
@@ -177,6 +199,40 @@ export default function RequestProductionView({ onSubmit }: RequestProductionVie
               placeholder="gildong@gmail.com"
               className="w-full bg-white border border-stone-250 rounded-lg p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28]"
               required
+            />
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <label className="block text-[10px] uppercase font-bold tracking-wider text-stone-605">인스타그램 아이디 / SNS (선택)</label>
+          <input
+            type="text"
+            value={instagramId}
+            onChange={e => setInstagramId(e.target.value)}
+            placeholder="@cheongjun_film"
+            className="w-full bg-white border border-stone-250 rounded-lg p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28]"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="block text-[10px] uppercase font-bold tracking-wider text-stone-605">희망 제작 날짜 (선택)</label>
+            <input
+              type="date"
+              value={preferredDate}
+              onChange={e => setPreferredDate(e.target.value)}
+              className="w-full bg-white border border-stone-250 rounded-lg p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28]"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-[10px] uppercase font-bold tracking-wider text-stone-605">희망 제작 장소 (선택)</label>
+            <input
+              type="text"
+              value={preferredPlace}
+              onChange={e => setPreferredPlace(e.target.value)}
+              placeholder="예: 수암골, 무심천"
+              className="w-full bg-white border border-stone-250 rounded-lg p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28]"
             />
           </div>
         </div>

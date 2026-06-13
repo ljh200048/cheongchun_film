@@ -280,6 +280,22 @@ export default function AdminView({
                   </select>
                 </div>
 
+                {/* Additional Supporter Sub-Fields */}
+                <div className="grid grid-cols-2 gap-2 text-[10px] bg-stone-50/50 p-2.5 rounded-lg border border-stone-150 font-sans">
+                  <div>
+                    <span className="text-stone-450 font-bold block text-[8px] uppercase tracking-wider">사는 지역</span>
+                    <span className="text-stone-900 font-bold">{item.region || '미입력'}</span>
+                  </div>
+                  <div>
+                    <span className="text-stone-450 font-bold block text-[8px] uppercase tracking-wider">참여 가능 요일</span>
+                    <span className="text-stone-900 font-bold">{item.availableDays || '미입력'}</span>
+                  </div>
+                  <div className="col-span-2 border-t border-stone-100 pt-1.5 mt-0.5">
+                    <span className="text-stone-450 font-bold block text-[8px] uppercase tracking-wider">관심 및 희망 분야</span>
+                    <span className="text-[#E85C28] font-black">{item.interests || '미입력'}</span>
+                  </div>
+                </div>
+
                 <div className="space-y-1 bg-stone-50 p-2.5 rounded-lg border border-stone-150 text-[10px]">
                   <p className="text-[#E85C28] font-black uppercase tracking-wider text-[8px]">지원동기 및 참여포부</p>
                   <p className="text-stone-700 font-sans font-semibold leading-relaxed whitespace-pre-wrap">{item.motive}</p>

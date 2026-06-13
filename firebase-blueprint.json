@@ -44,6 +44,23 @@
       },
       "required": ["applicantName", "age", "phone", "email", "storyTitle", "storyDetails", "preferredType", "status", "createdAt"]
     },
+    "ProductionRequest": {
+      "title": "ProductionRequest",
+      "description": "Direct production request collection storing name, contact, insta, type, date, place, details, status and createdAt",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "instagramId": { "type": "string" },
+        "preferredType": { "type": "string", "enum": ["video", "photo", "interview", "poster"] },
+        "preferredDate": { "type": "string" },
+        "preferredPlace": { "type": "string" },
+        "storyDetails": { "type": "string" },
+        "status": { "type": "string", "enum": ["received", "reviewed", "accepted", "declined"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "phone", "preferredType", "storyDetails", "status", "createdAt"]
+    },
     "SupporterApplication": {
       "title": "SupporterApplication",
       "description": "Application to register as a Cheongju Youth Film Supporter",
@@ -56,6 +73,9 @@
         "introduction": { "type": "string", "description": "Brief bio" },
         "motive": { "type": "string", "description": "Reason for joining" },
         "instagramUrl": { "type": "string", "description": "Instagram portfolio or handle link" },
+        "region": { "type": "string", "description": "Residence region of supporter" },
+        "interests": { "type": "string", "description": "Volunteer interests/sections of crew" },
+        "availableDays": { "type": "string", "description": "Scheduled days available for participation" },
         "status": { "type": "string", "enum": ["received", "reviewed", "accepted", "declined"] },
         "createdAt": { "type": "string", "format": "date-time" }
       },
@@ -91,6 +111,10 @@
     "/productionApplications/{applicationId}": {
       "schema": "ProductionApplication",
       "description": "Public content request inquiries (non-authed submission permitted)"
+    },
+    "/productionRequests/{requestId}": {
+      "schema": "ProductionRequest",
+      "description": "Public direct production productionRequests (non-authed submission permitted)"
     },
     "/supporterApplications/{supporterId}": {
       "schema": "SupporterApplication",

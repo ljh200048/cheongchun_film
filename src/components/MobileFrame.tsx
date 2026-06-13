@@ -3,6 +3,7 @@ import { Wifi, Battery, ChevronLeft, ShieldCheck } from 'lucide-react';
 
 interface MobileFrameProps {
   children: React.ReactNode;
+  bottomNav?: React.ReactNode;
   currentViewTitle: string;
   onBack?: () => void;
   isAdminMode: boolean;
@@ -14,6 +15,7 @@ interface MobileFrameProps {
 
 export default function MobileFrame({ 
   children, 
+  bottomNav,
   currentViewTitle, 
   onBack,
   isAdminMode,
@@ -192,6 +194,9 @@ export default function MobileFrame({
           <div className="flex-1 overflow-y-auto bg-[#FDFCF8] flex flex-col relative" id="app-viewport-inner">
             {children}
           </div>
+
+          {/* Render fixed bottomNav here outside of scroll container! */}
+          {bottomNav}
         </div>
 
         {/* Right Column: Interactive Real-Time Admin Status Panel */}

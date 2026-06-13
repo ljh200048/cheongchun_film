@@ -60,6 +60,18 @@ service cloud.firestore {
           && data.createdAt is timestamp;
     }
 
+    function isValidProductionRequest(data) {
+      return data.name is string && data.name.size() >= 1 && data.name.size() <= 100
+          && data.phone is string && data.phone.size() >= 5 && data.phone.size() <= 30
+          && (!('instagramId' in data) || (data.instagramId is string && data.instagramId.size() <= 300))
+          && data.preferredType is string && (data.preferredType == 'video' || data.preferredType == 'photo' || data.preferredType == 'interview' || data.preferredType == 'poster')
+          && (!('preferredDate' in data) || (data.preferredDate is string && data.preferredDate.size() <= 100))
+          && (!('preferredPlace' in data) || (data.preferredPlace is string && data.preferredPlace.size() <= 300))
+          && data.storyDetails is string && data.storyDetails.size() <= 5000
+          && data.status is string && (data.status == 'received' || data.status == 'reviewed' || data.status == 'accepted' || data.status == 'declined')
+          && data.createdAt is timestamp;
+    }
+
     function isValidSupporterApplication(data) {
       return data.applicantName is string && data.applicantName.size() >= 1 && data.applicantName.size() <= 100
           && data.age is int && data.age >= 10 && data.age <= 120
@@ -68,6 +80,9 @@ service cloud.firestore {
           && data.introduction is string && data.introduction.size() <= 3000
           && data.motive is string && data.motive.size() <= 3000
           && (!('instagramUrl' in data) || (data.instagramUrl is string && data.instagramUrl.size() <= 300))
+          && (!('region' in data) || (data.region is string && data.region.size() <= 300))
+          && (!('interests' in data) || (data.interests is string && data.interests.size() <= 300))
+          && (!('availableDays' in data) || (data.availableDays is string && data.availableDays.size() <= 300))
           && data.status is string && (data.status == 'received' || data.status == 'reviewed' || data.status == 'accepted' || data.status == 'declined')
           && data.createdAt is timestamp;
     }
@@ -105,6 +120,14 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow create: if isValidId(applicationId) && isValidProductionApplication(incoming()) && incoming().status == 'received' && incoming().createdAt == request.time;
       allow update: if isAdmin() && isValidId(applicationId) && isValidProductionApplication(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Direct Production Requests
+    match /productionRequests/{requestId} {
+      allow read: if isAdmin();
+      allow create: if isValidId(requestId) && isValidProductionRequest(incoming()) && incoming().status == 'received' && incoming().createdAt == request.time;
+      allow update: if isAdmin() && isValidId(requestId) && isValidProductionRequest(incoming());
       allow delete: if isAdmin();
     }
 

@@ -477,6 +477,74 @@ export default function App() {
       productionApps={productionApps}
       supporterApps={supporterApps}
       inquiries={inquiries}
+      bottomNav={
+        currentView !== 'admin' ? (
+          <div className="bg-white border-t border-stone-200 shadow-[0_-4px_12px_rgba(0,0,0,0.04)] h-16 grid grid-cols-5 items-center select-none text-[10px] shrink-0 z-40 navbar-container">
+            {/* Tab 1 */}
+            <button 
+              id="tab-btn-home"
+              onClick={() => {
+                setCurrentView('home');
+                setHistory([]);
+              }} 
+              className={`flex flex-col items-center justify-center h-full transition-all duration-300 cursor-pointer ${
+                currentView === 'home' ? 'text-[#E85C28]' : 'text-stone-400 hover:text-stone-900'
+              }`}
+            >
+              <Compass size={18} />
+              <span className="scale-90 font-sans mt-1">홈</span>
+            </button>
+
+            {/* Tab 2 */}
+            <button 
+              id="tab-btn-about"
+              onClick={() => changeView('about')} 
+              className={`flex flex-col items-center justify-center h-full transition-all duration-300 cursor-pointer ${
+                currentView === 'about' ? 'text-[#E85C28]' : 'text-stone-400 hover:text-stone-900'
+              }`}
+            >
+              <Sparkles size={18} />
+              <span className="scale-90 font-sans mt-1">소개</span>
+            </button>
+
+            {/* Tab 3 */}
+            <button 
+              id="tab-btn-portfolio"
+              onClick={() => changeView('portfolio')} 
+              className={`flex flex-col items-center justify-center h-full transition-all duration-300 cursor-pointer ${
+                currentView === 'portfolio' ? 'text-[#E85C28]' : 'text-stone-400 hover:text-stone-900'
+              }`}
+            >
+              <Film size={18} />
+              <span className="scale-90 font-sans mt-1">필름책</span>
+            </button>
+
+            {/* Tab 4 */}
+            <button 
+              id="tab-btn-notice"
+              onClick={() => changeView('notice')} 
+              className={`flex flex-col items-center justify-center h-full transition-all duration-300 cursor-pointer ${
+                currentView === 'notice' ? 'text-[#E85C28]' : 'text-stone-400 hover:text-stone-900'
+              }`}
+            >
+              <Calendar size={18} />
+              <span className="scale-90 font-sans mt-1">공지방</span>
+            </button>
+
+            {/* Tab 5 */}
+            <button 
+              id="tab-btn-inquiry"
+              onClick={() => changeView('inquiry')} 
+              className={`flex flex-col items-center justify-center h-full transition-all duration-300 cursor-pointer ${
+                currentView === 'inquiry' ? 'text-[#E85C28]' : 'text-stone-400 hover:text-stone-900'
+              }`}
+            >
+              <HelpCircle size={18} />
+              <span className="scale-90 font-sans mt-1">문의방</span>
+            </button>
+          </div>
+        ) : undefined
+      }
     >
       {/* Absolute floating warning for authentication bounds */}
       {adminWarning && (
@@ -486,7 +554,7 @@ export default function App() {
       )}
 
       {/* Primary view render router block */}
-      <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex-1 flex flex-col min-h-0 pb-10">
         {currentView === 'home' && (
           <HomeView
             onNavigate={(v) => changeView(v)}
@@ -595,74 +663,6 @@ export default function App() {
           )
         )}
       </div>
-
-      {/* Unified Bottom Quick Tab Bar for mobile chassis */}
-      {currentView !== 'admin' && (
-        <div className="sticky bottom-0 bg-vintage-coal border-t border-vintage-paper/5 h-16 grid grid-cols-5 items-center select-none text-[10px] text-zinc-500 shrink-0 z-40 navbar-container">
-          {/* Tab 1 */}
-          <button 
-            id="tab-btn-home"
-            onClick={() => {
-              setCurrentView('home');
-              setHistory([]);
-            }} 
-            className={`flex flex-col items-center justify-center h-full transition-all duration-300 ${
-              currentView === 'home' ? 'text-vintage-accent' : 'hover:text-vintage-cream'
-            }`}
-          >
-            <Compass size={18} />
-            <span className="scale-90 font-sans mt-1">홈</span>
-          </button>
-
-          {/* Tab 2 */}
-          <button 
-            id="tab-btn-about"
-            onClick={() => changeView('about')} 
-            className={`flex flex-col items-center justify-center h-full transition-all duration-300 ${
-              currentView === 'about' ? 'text-vintage-accent' : 'hover:text-vintage-cream'
-            }`}
-          >
-            <Sparkles size={18} />
-            <span className="scale-90 font-sans mt-1">소개</span>
-          </button>
-
-          {/* Tab 3 */}
-          <button 
-            id="tab-btn-portfolio"
-            onClick={() => changeView('portfolio')} 
-            className={`flex flex-col items-center justify-center h-full transition-all duration-300 ${
-              currentView === 'portfolio' ? 'text-vintage-accent' : 'hover:text-vintage-cream'
-            }`}
-          >
-            <Film size={18} />
-            <span className="scale-90 font-sans mt-1">필름책</span>
-          </button>
-
-          {/* Tab 4 */}
-          <button 
-            id="tab-btn-notice"
-            onClick={() => changeView('notice')} 
-            className={`flex flex-col items-center justify-center h-full transition-all duration-300 ${
-              currentView === 'notice' ? 'text-vintage-accent' : 'hover:text-vintage-cream'
-            }`}
-          >
-            <Calendar size={18} />
-            <span className="scale-90 font-sans mt-1">공지방</span>
-          </button>
-
-          {/* Tab 5 */}
-          <button 
-            id="tab-btn-inquiry"
-            onClick={() => changeView('inquiry')} 
-            className={`flex flex-col items-center justify-center h-full transition-all duration-300 ${
-              currentView === 'inquiry' ? 'text-vintage-accent' : 'hover:text-vintage-cream'
-            }`}
-          >
-            <HelpCircle size={18} />
-            <span className="scale-90 font-sans mt-1">문의방</span>
-          </button>
-        </div>
-      )}
     </MobileFrame>
   );
 }
