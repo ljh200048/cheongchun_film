@@ -1,0 +1,127 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && 
+             request.auth.token.email == 'lch200048@gmail.com' && 
+             request.auth.token.email_verified == true;
+    }
+
+    // Entity validation functions
+    function isValidPortfolio(data) {
+      return data.title is string && data.title.size() >= 1 && data.title.size() <= 200
+          && data.category is string && (data.category == 'video' || data.category == 'photo' || data.category == 'interview' || data.category == 'poster')
+          && data.description is string && data.description.size() <= 10000
+          && data.imageUrl is string && data.imageUrl.size() <= 1500000
+          && (!('videoUrl' in data) || (data.videoUrl is string && data.videoUrl.size() <= 1000))
+          && (!('creatorAge' in data) || (data.creatorAge is int && data.creatorAge >= 10 && data.creatorAge <= 120))
+          && data.createdAt is timestamp;
+    }
+
+    function isValidNotice(data) {
+      return data.title is string && data.title.size() >= 1 && data.title.size() <= 200
+          && data.content is string && data.content.size() <= 50000
+          && data.createdAt is timestamp
+          && (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    function isValidProductionApplication(data) {
+      return data.applicantName is string && data.applicantName.size() >= 1 && data.applicantName.size() <= 100
+          && data.age is int && data.age >= 10 && data.age <= 120
+          && data.phone is string && data.phone.size() >= 5 && data.phone.size() <= 30
+          && data.email is string && data.email.size() >= 5 && data.email.size() <= 100
+          && data.storyTitle is string && data.storyTitle.size() >= 1 && data.storyTitle.size() <= 200
+          && data.storyDetails is string && data.storyDetails.size() <= 5000
+          && data.preferredType is string && (data.preferredType == 'video' || data.preferredType == 'photo' || data.preferredType == 'interview' || data.preferredType == 'poster')
+          && data.status is string && (data.status == 'received' || data.status == 'reviewed' || data.status == 'accepted' || data.status == 'declined')
+          && data.createdAt is timestamp;
+    }
+
+    function isValidSupporterApplication(data) {
+      return data.applicantName is string && data.applicantName.size() >= 1 && data.applicantName.size() <= 100
+          && data.age is int && data.age >= 10 && data.age <= 120
+          && data.phone is string && data.phone.size() >= 5 && data.phone.size() <= 30
+          && data.email is string && data.email.size() >= 5 && data.email.size() <= 100
+          && data.introduction is string && data.introduction.size() <= 3000
+          && data.motive is string && data.motive.size() <= 3000
+          && (!('instagramUrl' in data) || (data.instagramUrl is string && data.instagramUrl.size() <= 300))
+          && data.status is string && (data.status == 'received' || data.status == 'reviewed' || data.status == 'accepted' || data.status == 'declined')
+          && data.createdAt is timestamp;
+    }
+
+    function isValidInquiry(data) {
+      return data.writerName is string && data.writerName.size() >= 1 && data.writerName.size() <= 100
+          && data.email is string && data.email.size() >= 5 && data.email.size() <= 100
+          && data.subject is string && data.subject.size() >= 1 && data.subject.size() <= 200
+          && data.message is string && data.message.size() <= 5000
+          && data.isSecret is bool
+          && (!('password' in data) || (data.password is string && data.password.size() <= 64))
+          && (!('reply' in data) || (data.reply is string && data.reply.size() <= 5000))
+          && data.status is string && (data.status == 'pending' || data.status == 'replied')
+          && data.createdAt is timestamp;
+    }
+
+    // Portfolios
+    match /portfolios/{portfolioId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(portfolioId) && isValidPortfolio(incoming()) && incoming().createdAt == request.time;
+      allow update: if isAdmin() && isValidId(portfolioId) && isValidPortfolio(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Notices
+    match /notices/{noticeId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(noticeId) && isValidNotice(incoming()) && incoming().createdAt == request.time;
+      allow update: if isAdmin() && isValidId(noticeId) && isValidNotice(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Production Applications
+    match /productionApplications/{applicationId} {
+      allow read: if isAdmin();
+      allow create: if isValidId(applicationId) && isValidProductionApplication(incoming()) && incoming().status == 'received' && incoming().createdAt == request.time;
+      allow update: if isAdmin() && isValidId(applicationId) && isValidProductionApplication(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Supporters Applications
+    match /supporterApplications/{supporterId} {
+      allow read: if isAdmin();
+      allow create: if isValidId(supporterId) && isValidSupporterApplication(incoming()) && incoming().status == 'received' && incoming().createdAt == request.time;
+      allow update: if isAdmin() && isValidId(supporterId) && isValidSupporterApplication(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Inquiries
+    match /inquiries/{inquiryId} {
+      allow read: if true;
+      allow create: if isValidId(inquiryId) && isValidInquiry(incoming()) && incoming().status == 'pending' && incoming().createdAt == request.time;
+      allow update: if isAdmin() && isValidId(inquiryId) && isValidInquiry(incoming());
+      allow delete: if isAdmin();
+    }
+  }
+}

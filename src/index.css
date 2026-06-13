@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Noto Serif KR", Georgia, serif;
+  --font-sans: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  --color-vintage-cream: #1A1A1A; /* Solid contrast charcoal color instead of white cream */
+  --color-vintage-paper: #ECE9E0; /* Cream-beige sand paper background */
+  --color-vintage-coal: #FFFFFF;  /* Pure white cards on light layout */
+  --color-vintage-ink: #FDFCF8;   /* Light-cream index-card backdrop background */
+  --color-vintage-accent: #E85C28; /* Outstanding Bold Vermilion red-orange accent */
+  --color-vintage-gold: #1A1A1A;   /* Primary solid text black */
+}
+
+/* Custom fade scrollbar and helper patterns */
+body {
+  background-color: #ECE9E0;
+  color: #1A1A1A;
+  font-family: var(--font-sans);
+  margin: 0;
+  padding: 0;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Polaroids vignette and grain */
+.grain-overlay {
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Elegant film frames */
+.film-border {
+  border: 12px solid #F4F2EB;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
