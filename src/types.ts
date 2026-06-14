@@ -28,7 +28,7 @@ export interface ProductionApplication {
   storyTitle: string;
   storyDetails: string;
   preferredType: CategoryType;
-  status: 'received' | 'reviewed' | 'accepted' | 'declined';
+  status: 'received' | 'reviewed' | 'accepted' | 'declined' | 'contacted' | 'completed';
   createdAt: any;
 }
 

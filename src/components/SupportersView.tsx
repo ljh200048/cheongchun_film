@@ -48,7 +48,7 @@ export default function SupportersView({ onSubmit }: SupportersViewProps) {
         email,
         introduction,
         motive,
-        instagramUrl: instagramUrl || undefined,
+        instagramUrl: instagramUrl || "",
         region,
         interests,
         availableDays
@@ -57,7 +57,7 @@ export default function SupportersView({ onSubmit }: SupportersViewProps) {
       setIsSuccess(true);
     } catch (err) {
       console.error(err);
-      alert('접수 중 오류가 발생했습니다. 네트워크 신호를 확인해주세요.');
+      alert('접수 중 오류가 발생했습니다: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsSubmitting(false);
     }

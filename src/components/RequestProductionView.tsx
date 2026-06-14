@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { Sparkles, CheckCircle } from 'lucide-react';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
 import { CategoryType } from '../types';
 
 interface RequestProductionViewProps {
@@ -41,21 +39,7 @@ export default function RequestProductionView({ onSubmit }: RequestProductionVie
 
     setIsSubmitting(true);
     try {
-      // Create productionRequests entry ID and write payload
-      const requestId = `prod-req-${Date.now()}`;
-      await setDoc(doc(db, 'productionRequests', requestId), {
-        name: applicantName,
-        phone: phone,
-        instagramId: instagramId,
-        preferredType: preferredType,
-        preferredDate: preferredDate,
-        preferredPlace: preferredPlace,
-        storyDetails: storyDetails,
-        status: 'received',
-        createdAt: serverTimestamp()
-      });
-
-      // Submit to application schema as well to maintain dashboard synchrony
+      // Submit directly to productionApplications via onSubmit prop
       await onSubmit({
         applicantName,
         age: Number(age),

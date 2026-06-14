@@ -288,13 +288,30 @@ export default function App() {
     }
   };
 
+  // Helper to strip undefined values so Firestore client library does not throw errors
+  const cleanUndefined = <T extends Record<string, any>>(obj: T): T => {
+    const clean: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined && value !== null) {
+        clean[key] = value;
+      } else {
+        // Explicitly set optional string fields to empty string, and omit other types of undefined fields
+        const stringFields = ['instagramUrl', 'instagramId', 'region', 'interests', 'availableDays', 'videoUrl', 'reply', 'password'];
+        if (stringFields.includes(key)) {
+          clean[key] = "";
+        }
+      }
+    }
+    return clean;
+  };
+
   // 4. Firestore Mutation actions as required by rules
   const handleAddPortfolio = async (data: Omit<Portfolio, 'id' | 'createdAt'>) => {
     const colPath = 'portfolios';
     const id = `portfolio-${Date.now()}`;
     try {
       await setDoc(doc(db, colPath, id), {
-        ...data,
+        ...cleanUndefined(data),
         createdAt: serverTimestamp()
       });
     } catch (err) {
@@ -305,7 +322,7 @@ export default function App() {
   const handleEditPortfolio = async (id: string, data: Partial<Portfolio>) => {
     const colPath = 'portfolios';
     try {
-      await updateDoc(doc(db, colPath, id), data);
+      await updateDoc(doc(db, colPath, id), cleanUndefined(data));
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `${colPath}/${id}`);
     }
@@ -325,7 +342,7 @@ export default function App() {
     const id = `notice-${Date.now()}`;
     try {
       await setDoc(doc(db, colPath, id), {
-        ...data,
+        ...cleanUndefined(data),
         createdAt: serverTimestamp()
       });
     } catch (err) {
@@ -337,7 +354,7 @@ export default function App() {
     const colPath = 'notices';
     try {
       await updateDoc(doc(db, colPath, id), {
-        ...data,
+        ...cleanUndefined(data),
         updatedAt: serverTimestamp()
       });
     } catch (err) {
@@ -359,7 +376,7 @@ export default function App() {
     const id = `prod-app-${Date.now()}`;
     try {
       await setDoc(doc(db, colPath, id), {
-        ...data,
+        ...cleanUndefined(data),
         status: 'received',
         createdAt: serverTimestamp()
       });
@@ -391,7 +408,7 @@ export default function App() {
     const id = `supp-app-${Date.now()}`;
     try {
       await setDoc(doc(db, colPath, id), {
-        ...data,
+        ...cleanUndefined(data),
         status: 'received',
         createdAt: serverTimestamp()
       });
@@ -423,7 +440,7 @@ export default function App() {
     const id = `inquiry-${Date.now()}`;
     try {
       await setDoc(doc(db, colPath, id), {
-        ...data,
+        ...cleanUndefined(data),
         status: 'pending',
         createdAt: serverTimestamp()
       });

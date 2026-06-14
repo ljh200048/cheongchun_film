@@ -6,7 +6,7 @@ interface AdminViewProps {
   productionApps: ProductionApplication[];
   supporterApps: SupporterApplication[];
   inquiries: Inquiry[];
-  onUpdateProductionStatus: (id: string, status: 'received' | 'reviewed' | 'accepted' | 'declined') => Promise<void>;
+  onUpdateProductionStatus: (id: string, status: ProductionApplication['status']) => Promise<void>;
   onDeleteProduction: (id: string) => Promise<void>;
   onUpdateSupporterStatus: (id: string, status: 'received' | 'reviewed' | 'accepted' | 'declined') => Promise<void>;
   onDeleteSupporter: (id: string) => Promise<void>;
@@ -195,6 +195,8 @@ export default function AdminView({
                   >
                     <option value="received">📥 대기 (received)</option>
                     <option value="reviewed">✍️ 검토 (reviewed)</option>
+                    <option value="contacted">📞 연락 (contacted)</option>
+                    <option value="completed">🎉 완료 (completed)</option>
                     <option value="accepted">✓ 확정 (accepted)</option>
                     <option value="declined">✕ 보류 (declined)</option>
                   </select>
