@@ -3,12 +3,14 @@ export type CategoryType = 'video' | 'photo' | 'interview' | 'poster';
 export interface Portfolio {
   id: string;
   title: string;
-  category: CategoryType;
+  category: string; // '인터뷰' | '행사' | '릴스' | '포스터' | '서포터즈' | '기타'
   description: string;
-  imageUrl: string;
+  thumbnailUrl: string;
+  imageUrl?: string;
   videoUrl?: string;
   creatorAge?: number;
-  createdAt: any; // Firestore Timestamp or date ISO
+  createdAt: any;
+  updatedAt?: any;
 }
 
 export interface Notice {

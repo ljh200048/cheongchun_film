@@ -142,13 +142,13 @@ export default function HomeView({ onNavigate, featuredPortfolios, onSelectPortf
                 {/* Image Cover Container */}
                 <div className="relative h-32 bg-stone-100 overflow-hidden">
                   <img 
-                    src={item.imageUrl} 
+                    src={item.thumbnailUrl || item.imageUrl} 
                     alt={item.title} 
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 saturate-[0.85]"
                   />
                   <span className="absolute bottom-2 left-2 text-[8px] tracking-widest uppercase text-white bg-[#E85C28] px-2 py-0.5 rounded-sm font-sans z-10 font-black">
-                    {item.category === 'video' ? 'VIDEO' : item.category === 'photo' ? 'PHOTO' : item.category === 'interview' ? 'STORY' : 'POSTER'}
+                    {item.category || '기타'}
                   </span>
                 </div>
                 {/* Mini descriptions */}

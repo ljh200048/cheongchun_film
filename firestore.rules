@@ -33,12 +33,14 @@ service cloud.firestore {
     // Entity validation functions
     function isValidPortfolio(data) {
       return data.title is string && data.title.size() >= 1 && data.title.size() <= 200
-          && data.category is string && (data.category == 'video' || data.category == 'photo' || data.category == 'interview' || data.category == 'poster')
+          && data.category is string && (data.category == '인터뷰' || data.category == '행사' || data.category == '릴스' || data.category == '포스터' || data.category == '서포터즈' || data.category == '기타' || data.category == 'video' || data.category == 'photo' || data.category == 'interview' || data.category == 'poster')
           && data.description is string && data.description.size() <= 10000
-          && data.imageUrl is string && data.imageUrl.size() <= 1500000
+          && (!('thumbnailUrl' in data) || (data.thumbnailUrl is string && data.thumbnailUrl.size() <= 1500000))
+          && (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 1500000))
           && (!('videoUrl' in data) || (data.videoUrl is string && data.videoUrl.size() <= 1000))
           && (!('creatorAge' in data) || (data.creatorAge is int && data.creatorAge >= 10 && data.creatorAge <= 120))
-          && data.createdAt is timestamp;
+          && data.createdAt is timestamp
+          && (!('updatedAt' in data) || data.updatedAt is timestamp);
     }
 
     function isValidNotice(data) {

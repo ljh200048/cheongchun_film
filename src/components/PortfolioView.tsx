@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { Plus, X, Edit, Trash2, Camera, Link, MonitorPlay } from 'lucide-react';
-import { Portfolio, CategoryType } from '../types';
+import { Plus, X, Edit, Trash2, Camera, Link, MonitorPlay, Calendar } from 'lucide-react';
+import { Portfolio } from '../types';
 
 interface PortfolioViewProps {
   portfolios: Portfolio[];
@@ -12,12 +12,14 @@ interface PortfolioViewProps {
   setSelectedPortfolio: (item: Portfolio | null) => void;
 }
 
-const CATEGORIES: { value: CategoryType | 'all'; label: string }[] = [
+const CATEGORIES: { value: string | 'all'; label: string }[] = [
   { value: 'all', label: '전체' },
-  { value: 'video', label: '다큐영상' },
-  { value: 'photo', label: '포토스냅' },
-  { value: 'interview', label: '인터뷰북' },
-  { value: 'poster', label: '기록포스터' }
+  { value: '인터뷰', label: '🎙️ 인터뷰' },
+  { value: '행사', label: '🎉 행사' },
+  { value: '릴스', label: '📱 릴스' },
+  { value: '포스터', label: '🖼️ 포스터' },
+  { value: '서포터즈', label: '🤝 서포터즈' },
+  { value: '기타', label: '💡 기타' }
 ];
 
 export default function PortfolioView({
@@ -29,23 +31,39 @@ export default function PortfolioView({
   selectedPortfolio,
   setSelectedPortfolio
 }: PortfolioViewProps) {
-  const [activeCategory, setActiveCategory] = useState<CategoryType | 'all'>('all');
+  const [activeCategory, setActiveCategory] = useState<string | 'all'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingItem, setEditingItem] = useState<Portfolio | null>(null);
 
   // Form Fields State
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState<CategoryType>('video');
+  const [category, setCategory] = useState<string>('인터뷰');
   const [description, setDescription] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [creatorAge, setCreatorAge] = useState<number>(24);
   const [isCompilingImage, setIsCompilingImage] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Time conversion utility
+  const getMs = (dateVal: any) => {
+    if (!dateVal) return 0;
+    if (typeof dateVal.toDate === 'function') {
+      return dateVal.toDate().getTime();
+    }
+    if (dateVal.seconds) {
+      return dateVal.seconds * 1000;
+    }
+    const parsed = new Date(dateVal).getTime();
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  // Sort portfolios by createdAt (newest first)
+  const sortedPortfolios = [...portfolios].sort((a, b) => getMs(b.createdAt) - getMs(a.createdAt));
+
   // Category filter
-  const filteredItems = portfolios.filter(item => {
+  const filteredItems = sortedPortfolios.filter(item => {
     if (activeCategory === 'all') return true;
     return item.category === activeCategory;
   });
@@ -84,7 +102,7 @@ export default function PortfolioView({
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
           const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
-          setImageUrl(dataUrl);
+          setThumbnailUrl(dataUrl);
         }
         setIsCompilingImage(false);
       };
@@ -96,9 +114,9 @@ export default function PortfolioView({
   const handleOpenAdd = () => {
     setEditingItem(null);
     setTitle('');
-    setCategory('video');
+    setCategory('인터뷰');
     setDescription('');
-    setImageUrl('https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=400');
+    setThumbnailUrl('https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=400');
     setVideoUrl('');
     setCreatorAge(24);
     setShowAddModal(true);
@@ -108,9 +126,9 @@ export default function PortfolioView({
     e.stopPropagation();
     setEditingItem(item);
     setTitle(item.title);
-    setCategory(item.category);
+    setCategory(item.category || '인터뷰');
     setDescription(item.description);
-    setImageUrl(item.imageUrl);
+    setThumbnailUrl(item.thumbnailUrl || item.imageUrl || '');
     setVideoUrl(item.videoUrl || '');
     setCreatorAge(item.creatorAge || 24);
     setShowAddModal(true);
@@ -118,18 +136,19 @@ export default function PortfolioView({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !description || !imageUrl) {
-      alert('제목, 설명, 이미지를 모두 입력해 주세요.');
+    if (!title.trim() || !description.trim() || !thumbnailUrl.trim()) {
+      alert('제목, 설명, 썸네일 이미지를 모두 입력해 주세요.');
       return;
     }
 
     try {
       const pkg = {
-        title,
+        title: title.trim(),
         category,
-        description,
-        imageUrl,
-        videoUrl: videoUrl || undefined,
+        description: description.trim(),
+        thumbnailUrl: thumbnailUrl.trim(),
+        imageUrl: thumbnailUrl.trim(), // backward compatibility support
+        videoUrl: videoUrl.trim() || undefined,
         creatorAge: creatorAge ? Number(creatorAge) : undefined
       };
 
@@ -159,8 +178,28 @@ export default function PortfolioView({
     }
   };
 
+  const formatDate = (ts: any) => {
+    if (!ts) return '';
+    try {
+      if (ts.seconds) {
+        return new Date(ts.seconds * 1000).toLocaleDateString('ko-KR', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+      }
+      return new Date(ts).toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (e) {
+      return '';
+    }
+  };
+
   return (
-    <div className="flex-grow flex flex-col pb-12 animate-fadeIn relative">
+    <div className="flex-grow flex flex-col pb-12 animate-fadeIn relative text-stone-850">
       {/* Category Slider Tabs */}
       <div className="sticky top-0 bg-[#FDFCF8] z-20 px-4 py-3 border-b border-stone-200 flex space-x-2 overflow-x-auto select-none no-scrollbar shrink-0">
         {CATEGORIES.map(cat => (
@@ -211,7 +250,7 @@ export default function PortfolioView({
               {/* Cover layout */}
               <div className="relative w-full aspect-square bg-stone-100 border border-stone-150 rounded-xl overflow-hidden shrink-0">
                 <img
-                  src={item.imageUrl}
+                  src={item.thumbnailUrl || item.imageUrl}
                   alt={item.title}
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 saturate-[0.85]"
@@ -232,7 +271,7 @@ export default function PortfolioView({
                     {item.title}
                   </h4>
                   <p className="text-[9px] font-mono text-[#E85C28] mt-1 font-bold uppercase tracking-wider">
-                    {item.category === 'video' ? '영상다큐' : item.category === 'photo' ? '포토스냅' : item.category === 'interview' ? '인터뷰북' : '기록포스터'}
+                    {item.category || '기타'}
                   </p>
                 </div>
                 
@@ -268,7 +307,7 @@ export default function PortfolioView({
 
       {/* Cinematic Detail overlay Overlay Modal */}
       {selectedPortfolio && (
-        <div className="absolute inset-0 bg-[#FDFCF8] z-50 overflow-y-auto flex flex-col p-4 animate-fadeIn">
+        <div className="fixed inset-0 bg-[#FDFCF8] z-50 overflow-y-auto flex flex-col p-4 animate-fadeIn">
           {/* Header Controls */}
           <div className="flex items-center justify-between mb-4 border-b border-stone-200 pb-2">
             <span className="text-[9px] font-mono text-stone-800 font-extrabold tracking-widest uppercase">
@@ -284,7 +323,7 @@ export default function PortfolioView({
           </div>
 
           {/* Core Content Body */}
-          <div className="space-y-5">
+          <div className="space-y-5 max-w-2xl mx-auto w-full pb-12">
             {/* Embedded video player or Poster */}
             {selectedPortfolio.videoUrl ? (
               <div className="rounded-2xl overflow-hidden border border-stone-200 bg-black aspect-video relative flex items-center justify-center group shadow-md">
@@ -302,35 +341,37 @@ export default function PortfolioView({
                 />
               </div>
             ) : (
-              <div className="rounded-2xl overflow-hidden border border-stone-200 bg-stone-100 max-h-72 flex items-center justify-center shadow-md">
+              <div className="rounded-2xl overflow-hidden border border-stone-200 bg-stone-100 flex items-center justify-center shadow-md">
                 <img
-                  src={selectedPortfolio.imageUrl}
+                  src={selectedPortfolio.thumbnailUrl || selectedPortfolio.imageUrl}
                   alt={selectedPortfolio.title}
                   referrerPolicy="no-referrer"
-                  className="w-full object-cover max-h-72 saturate-[0.85]"
+                  className="w-full object-cover saturate-[0.85]"
                 />
               </div>
             )}
 
             {/* Documentary Narrative Context Cards */}
-            <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-3 relative shadow-sm text-stone-800">
+            <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-3 relative shadow-xs text-stone-800">
               <span className="inline-block text-[8px] tracking-widest uppercase text-white bg-[#E85C28] px-2.5 py-1 rounded-full font-sans font-black">
-                {selectedPortfolio.category.toUpperCase()}
+                {selectedPortfolio.category || '기타'}
               </span>
               
               <div className="space-y-1">
                 <h3 className="font-sans text-base font-black text-stone-950 leading-tight">
                   {selectedPortfolio.title}
                 </h3>
-                <p className="text-[10px] text-stone-500 font-sans font-bold">
-                  기록 대상: {selectedPortfolio.creatorAge ? `만 ${selectedPortfolio.creatorAge}세 청주 청년` : '청주를 살아가는 20대'}
-                </p>
+                <div className="flex space-x-2 text-[10px] text-stone-500 font-sans font-bold">
+                  <span>기록 대상: {selectedPortfolio.creatorAge ? `만 ${selectedPortfolio.creatorAge}세 청주 청년` : '청주를 살아가는 20대'}</span>
+                  <span>•</span>
+                  <span>등록일: {formatDate(selectedPortfolio.createdAt)}</span>
+                </div>
               </div>
 
               <div className="w-6 h-1 bg-[#E85C28] my-3" />
 
               {/* Narrative body */}
-              <div className="text-[11px] text-stone-700 leading-relaxed font-serif whitespace-pre-wrap text-justify">
+              <div className="text-[11px] text-stone-700 leading-relaxed font-sans whitespace-pre-wrap text-justify font-medium">
                 {selectedPortfolio.description}
               </div>
             </div>
@@ -345,7 +386,7 @@ export default function PortfolioView({
 
       {/* Add / Edit Portfolio Item Modal Overlay */}
       {showAddModal && (
-        <div className="absolute inset-0 bg-[#FDFCF8] z-50 flex flex-col p-5 animate-slideUp">
+        <div className="fixed inset-0 bg-[#FDFCF8] z-50 flex flex-col p-5 animate-slideUp">
           <div className="flex items-center justify-between pb-3 border-b border-stone-200 mb-4 select-none header-wrapper shrink-0">
             <h3 className="text-xs font-sans tracking-widest text-[#1A1A1A] font-extrabold uppercase">
               {editingItem ? 'EDITING FILM SHEET' : 'ADD NEW FILM SHEET'}
@@ -371,7 +412,7 @@ export default function PortfolioView({
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 placeholder="예: 수암골 노을에 젖은 나의 스물넷"
-                className="w-full bg-white border border-stone-250 rounded-lg p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28] focus:ring-1 focus:ring-[#E85C28]"
+                className="w-full bg-white border border-stone-250 rounded-lg p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28]"
                 required
               />
             </div>
@@ -382,13 +423,15 @@ export default function PortfolioView({
                 <label className="block text-[10px] uppercase font-sans font-bold tracking-wider text-stone-600">파일 구분</label>
                 <select
                   value={category}
-                  onChange={e => setCategory(e.target.value as CategoryType)}
+                  onChange={e => setCategory(e.target.value)}
                   className="w-full bg-white border border-stone-250 rounded-lg p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28]"
                 >
-                  <option value="video">🎞️ 다큐영상</option>
-                  <option value="photo">📷 포토스냅</option>
-                  <option value="interview">✍️ 인터뷰북</option>
-                  <option value="poster">🎨 기록포스터</option>
+                  <option value="인터뷰">🎙️ 인터뷰</option>
+                  <option value="행사">🎉 행사</option>
+                  <option value="릴스">📱 릴스</option>
+                  <option value="포스터">🖼️ 포스터</option>
+                  <option value="서포터즈">🤝 서포터즈</option>
+                  <option value="기타">💡 기타</option>
                 </select>
               </div>
 
@@ -420,7 +463,7 @@ export default function PortfolioView({
 
             {/* Custom file compression triggers */}
             <div className="space-y-2.5 p-3 bg-white rounded-xl border border-stone-200">
-              <label className="block text-[10px] uppercase font-sans font-bold tracking-wider text-stone-600">커버 이미지 연동</label>
+              <label className="block text-[10px] uppercase font-sans font-bold tracking-wider text-stone-600">커버 썸네일 이미지 연동</label>
               
               <div className="flex items-center space-x-3">
                 <button
@@ -442,17 +485,17 @@ export default function PortfolioView({
               </div>
 
               {/* Preview block */}
-              {imageUrl && (
+              {thumbnailUrl && (
                 <div className="relative mt-2 rounded bg-stone-50 p-2 border border-stone-200 flex items-center space-x-3">
                   <img
-                    src={imageUrl}
+                    src={thumbnailUrl}
                     alt="Cover preview"
                     referrerPolicy="no-referrer"
                     className="w-14 h-14 object-cover rounded border border-stone-200"
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-[8px] text-emerald-600 font-mono tracking-widest font-bold">✓ COMPRESSED JET-STREAM</p>
-                    <p className="text-[9px] text-stone-500 truncate">{imageUrl.slice(0, 40)}...</p>
+                    <p className="text-[9px] text-stone-500 truncate">{thumbnailUrl.slice(0, 40)}...</p>
                   </div>
                 </div>
               )}

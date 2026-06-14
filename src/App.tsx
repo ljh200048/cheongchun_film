@@ -339,8 +339,10 @@ export default function App() {
     try {
       await setDoc(doc(db, colPath, id), {
         ...cleanUndefined(data),
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
       });
+      alert('포트폴리오가 등록되었습니다.');
     } catch (err) {
       handleFirestoreError(err, OperationType.CREATE, colPath);
     }
@@ -349,7 +351,11 @@ export default function App() {
   const handleEditPortfolio = async (id: string, data: Partial<Portfolio>) => {
     const colPath = 'portfolios';
     try {
-      await updateDoc(doc(db, colPath, id), cleanUndefined(data));
+      await updateDoc(doc(db, colPath, id), {
+        ...cleanUndefined(data),
+        updatedAt: serverTimestamp()
+      });
+      alert('포트폴리오가 수정되었습니다.');
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `${colPath}/${id}`);
     }
@@ -359,6 +365,7 @@ export default function App() {
     const colPath = 'portfolios';
     try {
       await deleteDoc(doc(db, colPath, id));
+      alert('포트폴리오가 삭제되었습니다.');
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, `${colPath}/${id}`);
     }
@@ -700,6 +707,7 @@ export default function App() {
                 supporterApps={supporterApps}
                 inquiries={inquiries}
                 notices={notices}
+                portfolios={portfolios}
                 onUpdateProductionStatus={handleUpdateProductionStatus}
                 onDeleteProduction={handleDeleteProduction}
                 onUpdateSupporterStatus={handleUpdateSupporterStatus}
@@ -709,6 +717,9 @@ export default function App() {
                 onAddNotice={handleAddNotice}
                 onEditNotice={handleEditNotice}
                 onDeleteNotice={handleDeleteNotice}
+                onAddPortfolio={handleAddPortfolio}
+                onEditPortfolio={handleEditPortfolio}
+                onDeletePortfolio={handleDeletePortfolio}
               />
             </div>
           ) : (
