@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wifi, Battery, ChevronLeft, ShieldCheck } from 'lucide-react';
+import { Wifi, Battery, ChevronLeft, ShieldCheck, Film } from 'lucide-react';
 
 interface MobileFrameProps {
   children: React.ReactNode;
@@ -169,7 +169,7 @@ export default function MobileFrame({
                   <ChevronLeft size={20} />
                 </button>
               ) : (
-                <div className="w-2 h-2 rounded-full bg-[#E85C28]" />
+                <Film size={15} className="text-[#E85C28] shrink-0" />
               )}
               <h2 className="font-sans text-xs font-bold text-[#1A1A1A] tracking-tight uppercase">
                 {currentViewTitle}
