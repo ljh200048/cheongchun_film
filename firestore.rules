@@ -50,7 +50,7 @@ service cloud.firestore {
 
     function isValidProductionApplication(data) {
       return data.applicantName is string && data.applicantName.size() >= 1 && data.applicantName.size() <= 100
-          && data.age is int && data.age >= 10 && data.age <= 120
+          && (data.age is int || data.age is float || data.age is number) && data.age >= 10 && data.age <= 120
           && data.phone is string && data.phone.size() >= 5 && data.phone.size() <= 30
           && data.email is string && data.email.size() >= 5 && data.email.size() <= 100
           && data.storyTitle is string && data.storyTitle.size() >= 1 && data.storyTitle.size() <= 200
@@ -74,7 +74,7 @@ service cloud.firestore {
 
     function isValidSupporterApplication(data) {
       return data.applicantName is string && data.applicantName.size() >= 1 && data.applicantName.size() <= 100
-          && data.age is int && data.age >= 10 && data.age <= 120
+          && (data.age is int || data.age is float || data.age is number) && data.age >= 10 && data.age <= 120
           && data.phone is string && data.phone.size() >= 5 && data.phone.size() <= 30
           && data.email is string && data.email.size() >= 5 && data.email.size() <= 100
           && data.introduction is string && data.introduction.size() <= 3000
