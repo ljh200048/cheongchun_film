@@ -1,5 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { Mail, Phone, Calendar, ClipboardCheck, Trash2, ExternalLink, Edit, Plus, Camera, Link, MonitorPlay } from 'lucide-react';
+import { Mail, Phone, Calendar, ClipboardCheck, Trash2, ExternalLink, Edit, Plus, Camera, Link, MonitorPlay, X } from 'lucide-react';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../firebase';
 import { ProductionApplication, SupporterApplication, Inquiry, Notice, Portfolio } from '../types';
 
 interface AdminViewProps {
@@ -63,6 +65,9 @@ export default function AdminView({
   const [noticeCategory, setNoticeCategory] = useState('일반');
   const [noticeIsPublic, setNoticeIsPublic] = useState(true);
   const [editingNoticeId, setEditingNoticeId] = useState<string | null>(null);
+  const [noticeImageUrl, setNoticeImageUrl] = useState('');
+  const [isCompilingNoticeImage, setIsCompilingNoticeImage] = useState(false);
+  const noticeFileInputRef = useRef<HTMLInputElement>(null);
 
   const getMs = (dateVal: any) => {
     if (!dateVal) return 0;
@@ -141,18 +146,37 @@ export default function AdminView({
     }
   };
 
-  const handlePortfolioImageUploadAndCompress = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePortfolioImageUploadAndCompress = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsCompilingPortfolioImage(true);
+
+    const uploadToStorage = async (fileToUpload: Blob | File, originalName: string) => {
+      try {
+        const sanitizedName = originalName.replace(/[^a-zA-Z0-9.]/g, '_');
+        const filename = `portfolios/${Date.now()}_${sanitizedName}`;
+        const storageRef = ref(storage, filename);
+        const snapshot = await uploadBytes(storageRef, fileToUpload);
+        const downloadUrl = await getDownloadURL(snapshot.ref);
+        
+        setPortfolioThumbnailUrl(downloadUrl);
+        alert('이미지가 업로드되었습니다.');
+      } catch (err) {
+        console.error('Firebase Storage upload error: ', err);
+        alert('이미지 업로드에 실패했습니다. 다시 시도해 주세요.');
+      } finally {
+        setIsCompilingPortfolioImage(false);
+      }
+    };
+
     const reader = new FileReader();
     reader.onload = (event) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 480;
-        const MAX_HEIGHT = 320;
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 600;
         let width = img.width;
         let height = img.height;
 
@@ -173,12 +197,97 @@ export default function AdminView({
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
-          setPortfolioThumbnailUrl(dataUrl);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              uploadToStorage(blob, file.name);
+            } else {
+              uploadToStorage(file, file.name);
+            }
+          }, 'image/jpeg', 0.82);
+        } else {
+          uploadToStorage(file, file.name);
         }
-        setIsCompilingPortfolioImage(false);
+      };
+      img.onerror = () => {
+        uploadToStorage(file, file.name);
       };
       img.src = event.target?.result as string;
+    };
+    reader.onerror = () => {
+      uploadToStorage(file, file.name);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleNoticeImageUploadAndCompress = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsCompilingNoticeImage(true);
+
+    const uploadToStorage = async (fileToUpload: Blob | File, originalName: string) => {
+      try {
+        const sanitizedName = originalName.replace(/[^a-zA-Z0-9.]/g, '_');
+        const filename = `notices/${Date.now()}_${sanitizedName}`;
+        const storageRef = ref(storage, filename);
+        const snapshot = await uploadBytes(storageRef, fileToUpload);
+        const downloadUrl = await getDownloadURL(snapshot.ref);
+        
+        setNoticeImageUrl(downloadUrl);
+        alert('이미지가 업로드되었습니다.');
+      } catch (err) {
+        console.error('Firebase Storage upload error: ', err);
+        alert('이미지 업로드에 실패했습니다. 다시 시도해 주세요.');
+      } finally {
+        setIsCompilingNoticeImage(false);
+      }
+    };
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1000;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              uploadToStorage(blob, file.name);
+            } else {
+              uploadToStorage(file, file.name);
+            }
+          }, 'image/jpeg', 0.85);
+        } else {
+          uploadToStorage(file, file.name);
+        }
+      };
+      img.onerror = () => {
+        uploadToStorage(file, file.name);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = () => {
+      uploadToStorage(file, file.name);
     };
     reader.readAsDataURL(file);
   };
@@ -188,6 +297,7 @@ export default function AdminView({
     setNoticeContent('');
     setNoticeCategory('일반');
     setNoticeIsPublic(true);
+    setNoticeImageUrl('');
     setEditingNoticeId(null);
   };
 
@@ -204,7 +314,8 @@ export default function AdminView({
         content: noticeContent.trim(),
         category: noticeCategory,
         isPublic: noticeIsPublic,
-        isPublished: noticeIsPublic
+        isPublished: noticeIsPublic,
+        imageUrl: noticeImageUrl || undefined
       };
 
       if (editingNoticeId) {
@@ -225,6 +336,7 @@ export default function AdminView({
     setNoticeContent(item.content);
     setNoticeCategory(item.category || '일반');
     setNoticeIsPublic(item.isPublic !== false);
+    setNoticeImageUrl(item.imageUrl || '');
   };
 
   const handleRemoveNotice = async (id: string) => {
@@ -777,6 +889,55 @@ export default function AdminView({
                   />
                 </div>
 
+                {/* Notice Representative Image Upload */}
+                <div className="space-y-2 p-3 bg-stone-50 rounded-xl border border-stone-200">
+                  <label className="block text-[8.5px] uppercase font-bold text-stone-600">대표 이미지 (Storage 연동)</label>
+                  
+                  <div className="flex items-center space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => noticeFileInputRef.current?.click()}
+                      className="flex-grow flex justify-center items-center space-x-1.5 p-2 bg-white hover:bg-stone-100 border border-dashed border-stone-300 rounded-lg text-xs transition text-stone-850 cursor-pointer"
+                    >
+                      <Camera size={14} className="text-[#E85C28]" />
+                      <span>{isCompilingNoticeImage ? '업로드 중...' : '공지 대표 이미지 업로드'}</span>
+                    </button>
+                    <input
+                      type="file"
+                      ref={noticeFileInputRef}
+                      onChange={handleNoticeImageUploadAndCompress}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                  </div>
+
+                  {/* Preview block */}
+                  {noticeImageUrl && (
+                    <div className="relative mt-2 rounded bg-white p-2 border border-stone-200 flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <img
+                          src={noticeImageUrl}
+                          alt="Notice representative"
+                          referrerPolicy="no-referrer"
+                          className="w-14 h-14 object-cover rounded border border-stone-200"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[8px] text-emerald-600 font-mono tracking-widest font-bold">✓ STORAGE LINK</p>
+                          <p className="text-[9px] text-stone-500 truncate max-w-[150px]">{noticeImageUrl}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setNoticeImageUrl('')}
+                        className="p-1 text-stone-400 hover:text-red-500 rounded-lg hover:bg-stone-100 cursor-pointer"
+                        title="이미지 제거"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex space-x-2 pt-1 border-t border-stone-100 mt-2">
                   <button
                     type="submit"
@@ -939,7 +1100,7 @@ export default function AdminView({
                         className="flex-grow flex justify-center items-center space-x-1.5 p-2 bg-stone-50 hover:bg-stone-100 border border-dashed border-stone-250 rounded-lg text-xs transition text-stone-850 font-bold cursor-pointer"
                       >
                         <Camera size={13} className="text-[#E85C28]" />
-                        <span>{isCompilingPortfolioImage ? '사진 압축 및 인화 중...' : '로컬 스마트폰/PC 이미지 인화'}</span>
+                        <span>{isCompilingPortfolioImage ? '업로드 중...' : '로컬 스마트폰/PC 이미지 인화'}</span>
                       </button>
                       <input
                         type="file"

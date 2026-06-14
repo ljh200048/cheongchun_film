@@ -18,6 +18,7 @@ export interface Notice {
   title: string;
   content: string;
   category: string;
+  imageUrl?: string;
   isPublic: boolean;
   isPublished?: boolean;
   createdAt: any;

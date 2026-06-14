@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { Calendar, Plus, X, Trash2, Edit, Megaphone } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Calendar, Plus, X, Trash2, Edit, Megaphone, Camera } from 'lucide-react';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../firebase';
 import { Notice } from '../types';
 
 interface NoticeViewProps {
@@ -29,12 +31,16 @@ export default function NoticeView({
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('일반');
   const [isPublic, setIsPublic] = useState(true);
+  const [imageUrl, setImageUrl] = useState('');
+  const [isCompilingImage, setIsCompilingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleOpenAdd = () => {
     setEditingItem(null);
     setTitle('');
     setContent('');
     setCategory('일반');
+    setImageUrl('');
     setIsPublic(true);
     setShowAddModal(true);
   };
@@ -45,8 +51,87 @@ export default function NoticeView({
     setTitle(item.title);
     setContent(item.content);
     setCategory(item.category || '일반');
+    setImageUrl(item.imageUrl || '');
     setIsPublic(item.isPublic !== false);
     setShowAddModal(true);
+  };
+
+  const handleImageUploadAndCompress = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!isAdmin) {
+      alert('관리자만 이미지를 업로드할 수 있습니다.');
+      return;
+    }
+
+    setIsCompilingImage(true);
+
+    const uploadToStorage = async (fileToUpload: Blob | File, originalName: string) => {
+      try {
+        const sanitizedName = originalName.replace(/[^a-zA-Z0-9.]/g, '_');
+        const filename = `notices/${Date.now()}_${sanitizedName}`;
+        const storageRef = ref(storage, filename);
+        const snapshot = await uploadBytes(storageRef, fileToUpload);
+        const downloadUrl = await getDownloadURL(snapshot.ref);
+        
+        setImageUrl(downloadUrl);
+        alert('이미지가 업로드되었습니다.');
+      } catch (err) {
+        console.error('Firebase Storage upload error: ', err);
+        alert('이미지 업로드에 실패했습니다. 다시 시도해 주세요.');
+      } finally {
+        setIsCompilingImage(false);
+      }
+    };
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1000;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              uploadToStorage(blob, file.name);
+            } else {
+              uploadToStorage(file, file.name);
+            }
+          }, 'image/jpeg', 0.85);
+        } else {
+          uploadToStorage(file, file.name);
+        }
+      };
+      img.onerror = () => {
+        uploadToStorage(file, file.name);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = () => {
+      uploadToStorage(file, file.name);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,7 +142,7 @@ export default function NoticeView({
     }
 
     try {
-      const pkg = { title, content, category, isPublic };
+      const pkg = { title, content, category, isPublic, imageUrl: imageUrl || undefined };
       if (editingItem) {
         await onEdit(editingItem.id, pkg);
       } else {
@@ -141,6 +226,16 @@ export default function NoticeView({
               className="group p-4 bg-white rounded-xl border border-stone-200 hover:border-[#E85C28] transition duration-300 cursor-pointer text-left shadow-sm"
             >
               <div className="flex items-start justify-between">
+                {item.imageUrl && (
+                  <div className="w-16 h-16 mr-3.5 shrink-0 rounded-lg overflow-hidden border border-stone-200">
+                    <img
+                      src={item.imageUrl}
+                      alt={item.title}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
                 <div className="space-y-1.5 flex-1 pr-4">
                   <div className="flex items-center space-x-2 text-[9px] font-mono font-bold text-[#E85C28] tracking-wider uppercase flex-wrap gap-y-1">
                     <span className="bg-[#E85C28]/10 text-[#E85C28] px-1.5 py-0.5 rounded text-[8px] font-black">
@@ -227,6 +322,16 @@ export default function NoticeView({
               <h3 className="font-sans text-base font-black text-stone-900 leading-tight border-b border-stone-100 pb-3">
                 {selectedNotice.title}
               </h3>
+              {selectedNotice.imageUrl && (
+                <div className="rounded-2xl overflow-hidden border border-stone-150 max-h-72 flex justify-center bg-stone-50 select-none my-3">
+                  <img
+                    src={selectedNotice.imageUrl}
+                    alt="Notice representative"
+                    referrerPolicy="no-referrer"
+                    className="max-h-72 object-contain w-auto mx-auto"
+                  />
+                </div>
+              )}
               <div className="text-[11px] text-stone-750 leading-relaxed font-sans whitespace-pre-wrap text-justify pt-1 font-medium">
                 {selectedNotice.content}
               </div>
@@ -314,6 +419,55 @@ export default function NoticeView({
                 className="w-full bg-white border border-stone-250 rounded-lg p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28] leading-relaxed"
                 required
               />
+            </div>
+
+            {/* Notice Representative Image Upload */}
+            <div className="space-y-2 p-3 bg-white rounded-xl border border-stone-200">
+              <label className="block text-[10px] uppercase font-sans font-bold tracking-wider text-stone-600">대표 이미지 (Storage 연동)</label>
+              
+              <div className="flex items-center space-x-3">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex-grow flex justify-center items-center space-x-1.5 p-2 bg-stone-50 hover:bg-stone-100 border border-dashed border-stone-300 rounded-lg text-xs transition text-stone-850 cursor-pointer animate-fadeIn"
+                >
+                  <Camera size={14} className="text-[#E85C28]" />
+                  <span>{isCompilingImage ? '업로드 중...' : '공지 대표 이미지 업로드'}</span>
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageUploadAndCompress}
+                  accept="image/*"
+                  className="hidden"
+                />
+              </div>
+
+              {/* Preview block */}
+              {imageUrl && (
+                <div className="relative mt-2 rounded bg-stone-50 p-2 border border-stone-200 flex items-center justify-between animate-fadeIn">
+                  <div className="flex items-center space-x-3">
+                    <img
+                      src={imageUrl}
+                      alt="Notice representative preview"
+                      referrerPolicy="no-referrer"
+                      className="w-14 h-14 object-cover rounded border border-stone-200"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[8px] text-emerald-600 font-mono tracking-widest font-bold">✓ STORAGE LINK</p>
+                      <p className="text-[9px] text-stone-500 truncate max-w-[155px]">{imageUrl}</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setImageUrl('')}
+                    className="p-1 text-stone-400 hover:text-red-500 rounded-lg hover:bg-stone-105 cursor-pointer text-xs shrink-0"
+                    title="이미지 제거"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
             </div>
 
             <button

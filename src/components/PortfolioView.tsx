@@ -1,5 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Plus, X, Edit, Trash2, Camera, Link, MonitorPlay, Calendar } from 'lucide-react';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../firebase';
 import { Portfolio } from '../types';
 
 interface PortfolioViewProps {
@@ -68,19 +70,43 @@ export default function PortfolioView({
     return item.category === activeCategory;
   });
 
-  // Handle local image file upload & compression
-  const handleImageUploadAndCompress = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle image file upload to Firebase Storage with local compression
+  const handleImageUploadAndCompress = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!isAdmin) {
+      alert('관리자만 이미지를 업로드할 수 있습니다.');
+      return;
+    }
+
     setIsCompilingImage(true);
+
+    const uploadToStorage = async (fileToUpload: Blob | File, originalName: string) => {
+      try {
+        const sanitizedName = originalName.replace(/[^a-zA-Z0-9.]/g, '_');
+        const filename = `portfolios/${Date.now()}_${sanitizedName}`;
+        const storageRef = ref(storage, filename);
+        const snapshot = await uploadBytes(storageRef, fileToUpload);
+        const downloadUrl = await getDownloadURL(snapshot.ref);
+        
+        setThumbnailUrl(downloadUrl);
+        alert('이미지가 업로드되었습니다.');
+      } catch (err) {
+        console.error('Firebase Storage upload error: ', err);
+        alert('이미지 업로드에 실패했습니다. 다시 시도해 주세요.');
+      } finally {
+        setIsCompilingImage(false);
+      }
+    };
+
     const reader = new FileReader();
     reader.onload = (event) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 480;
-        const MAX_HEIGHT = 320;
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 600;
         let width = img.width;
         let height = img.height;
 
@@ -101,12 +127,24 @@ export default function PortfolioView({
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
-          setThumbnailUrl(dataUrl);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              uploadToStorage(blob, file.name);
+            } else {
+              uploadToStorage(file, file.name);
+            }
+          }, 'image/jpeg', 0.82);
+        } else {
+          uploadToStorage(file, file.name);
         }
-        setIsCompilingImage(false);
+      };
+      img.onerror = () => {
+        uploadToStorage(file, file.name);
       };
       img.src = event.target?.result as string;
+    };
+    reader.onerror = () => {
+      uploadToStorage(file, file.name);
     };
     reader.readAsDataURL(file);
   };
@@ -473,7 +511,7 @@ export default function PortfolioView({
                   className="flex-grow flex justify-center items-center space-x-1.5 p-2 bg-stone-50 hover:bg-stone-100 border border-dashed border-stone-300 rounded-lg text-xs transition text-stone-800 cursor-pointer"
                 >
                   <Camera size={14} className="text-[#E85C28]" />
-                  <span>{isCompilingImage ? '인화 중...' : '폰 갤러리/사진 업로드'}</span>
+                  <span>{isCompilingImage ? '업로드 중...' : '폰 갤러리/사진 업로드'}</span>
                 </button>
                 <input
                   type="file"
