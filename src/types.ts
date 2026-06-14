@@ -15,6 +15,8 @@ export interface Notice {
   id: string;
   title: string;
   content: string;
+  category: string;
+  isPublic: boolean;
   createdAt: any;
   updatedAt?: any;
 }
@@ -41,7 +43,7 @@ export interface SupporterApplication {
   introduction: string;
   motive: string;
   instagramUrl?: string;
-  status: 'received' | 'reviewed' | 'accepted' | 'declined';
+  status: 'received' | 'reviewed' | 'contacted' | 'completed' | 'accepted' | 'declined';
   region?: string;
   interests?: string;
   availableDays?: string;

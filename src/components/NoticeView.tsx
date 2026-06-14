@@ -27,11 +27,15 @@ export default function NoticeView({
   // Form Fields State
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [category, setCategory] = useState('일반');
+  const [isPublic, setIsPublic] = useState(true);
 
   const handleOpenAdd = () => {
     setEditingItem(null);
     setTitle('');
     setContent('');
+    setCategory('일반');
+    setIsPublic(true);
     setShowAddModal(true);
   };
 
@@ -40,6 +44,8 @@ export default function NoticeView({
     setEditingItem(item);
     setTitle(item.title);
     setContent(item.content);
+    setCategory(item.category || '일반');
+    setIsPublic(item.isPublic !== false);
     setShowAddModal(true);
   };
 
@@ -51,7 +57,7 @@ export default function NoticeView({
     }
 
     try {
-      const pkg = { title, content };
+      const pkg = { title, content, category, isPublic };
       if (editingItem) {
         await onEdit(editingItem.id, pkg);
       } else {
@@ -118,12 +124,16 @@ export default function NoticeView({
 
       {/* Notices List */}
       <div className="space-y-4 p-4">
-        {notices.length === 0 ? (
-          <div className="py-16 text-center text-stone-500 font-sans text-xs leading-relaxed">
-            게시된 공지사항이 아직 없습니다.
-          </div>
-        ) : (
-          notices.map((item) => (
+        {(() => {
+          const displayedNotices = isAdmin ? notices : notices.filter(item => item.isPublic !== false);
+          if (displayedNotices.length === 0) {
+            return (
+              <div className="py-16 text-center text-stone-500 font-sans text-xs leading-relaxed">
+                게시된 공지사항이 아직 없습니다.
+              </div>
+            );
+          }
+          return displayedNotices.map((item) => (
             <div
               id={`notice-card-${item.id}`}
               key={item.id}
@@ -132,13 +142,25 @@ export default function NoticeView({
             >
               <div className="flex items-start justify-between">
                 <div className="space-y-1.5 flex-1 pr-4">
-                  <div className="flex items-center space-x-2 text-[9px] font-mono font-bold text-[#E85C28] tracking-wider uppercase">
-                    <Calendar size={11} />
-                    <span>{formatDate(item.createdAt)}</span>
+                  <div className="flex items-center space-x-2 text-[9px] font-mono font-bold text-[#E85C28] tracking-wider uppercase flex-wrap gap-y-1">
+                    <span className="bg-[#E85C28]/10 text-[#E85C28] px-1.5 py-0.5 rounded text-[8px] font-black">
+                      {item.category || '일반'}
+                    </span>
                     <span className="text-stone-300">•</span>
-                    <span>OFFICIAL</span>
+                    <span className="flex items-center space-x-1 font-black">
+                      <Calendar size={10} />
+                      <span>{formatDate(item.createdAt)}</span>
+                    </span>
+                    {isAdmin && (
+                      <>
+                        <span className="text-stone-300">•</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[8px] font-black ${item.isPublic !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-stone-100 text-stone-500'}`}>
+                          {item.isPublic !== false ? '공개' : '비공개'}
+                        </span>
+                      </>
+                    )}
                   </div>
-                  <h4 className="font-sans text-[13px] font-black text-stone-900 group-hover:text-[#E85C28] transition-colors line-clamp-1 leading-snug">
+                  <h4 className="font-sans text-[13px] font-black text-stone-900 group-hover:text-[#E85C28] transition-colors line-clamp-1 leading-snug pt-1">
                     {item.title}
                   </h4>
                   <p className="text-[10.5px] text-stone-600 font-sans font-medium line-clamp-1">
@@ -166,8 +188,8 @@ export default function NoticeView({
                 )}
               </div>
             </div>
-          ))
-        )}
+          ));
+        })()}
       </div>
 
       {/* Notices Detail Overlay Modal */}
@@ -189,9 +211,19 @@ export default function NoticeView({
 
           <div className="space-y-4">
             <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-3 shadow-sm">
-              <span className="text-[9px] text-stone-500 font-sans font-bold block">
-                게시일 : {formatDate(selectedNotice.createdAt)}
-              </span>
+              <div className="flex items-center gap-2 select-none flex-wrap">
+                <span className="bg-[#E85C28]/10 text-[#E85C28] px-1.5 py-0.5 rounded text-[8.5px] font-extrabold font-mono uppercase">
+                  {selectedNotice.category || '일반'}
+                </span>
+                <span className="text-[9px] text-stone-500 font-sans font-bold block">
+                  게시일 : {formatDate(selectedNotice.createdAt)}
+                </span>
+                {isAdmin && (
+                  <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold ${selectedNotice.isPublic !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-stone-100 text-stone-500'}`}>
+                    {selectedNotice.isPublic !== false ? '공개' : '비공개'}
+                  </span>
+                )}
+              </div>
               <h3 className="font-sans text-base font-black text-stone-900 leading-tight border-b border-stone-100 pb-3">
                 {selectedNotice.title}
               </h3>
@@ -226,7 +258,7 @@ export default function NoticeView({
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex-grow space-y-4 font-sans text-stone-850">
+          <form onSubmit={handleSubmit} className="flex-grow space-y-4 font-sans text-stone-850 overflow-y-auto">
             <div className="space-y-1">
               <label className="block text-[10px] uppercase font-sans font-bold tracking-wider text-stone-600">공지사항 제목</label>
               <input
@@ -239,13 +271,46 @@ export default function NoticeView({
               />
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="block text-[10px] uppercase font-sans font-bold tracking-wider text-stone-600">공지사항 카테고리</label>
+                <select
+                  value={category}
+                  onChange={e => setCategory(e.target.value)}
+                  className="w-full bg-white border border-[#D1CFCE] rounded-lg p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28]"
+                  required
+                >
+                  <option value="일반">일반</option>
+                  <option value="행사">행사</option>
+                  <option value="모집">모집</option>
+                  <option value="안내">안내</option>
+                </select>
+              </div>
+
+              <div className="space-y-1 flex flex-col justify-center">
+                <label className="block text-[10px] uppercase font-sans font-bold tracking-wider text-stone-600 mb-2">공개 여부</label>
+                <label className="relative inline-flex items-center cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={isPublic}
+                    onChange={e => setIsPublic(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#E85C28]"></div>
+                  <span className="ml-2.5 text-xs font-semibold text-stone-800">
+                    {isPublic ? '공개로 게시' : '비공개로 저장'}
+                  </span>
+                </label>
+              </div>
+            </div>
+
             <div className="space-y-1">
               <label className="block text-[10px] uppercase font-sans font-bold tracking-wider text-stone-600">공지사항 세부 내용</label>
               <textarea
                 value={content}
                 onChange={e => setContent(e.target.value)}
                 placeholder="공지의 상세 일정, 오프라인 장소 및 전달 사항을 자세히 작성해주세요..."
-                rows={10}
+                rows={8}
                 className="w-full bg-white border border-stone-250 rounded-lg p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28] leading-relaxed"
                 required
               />
@@ -254,7 +319,7 @@ export default function NoticeView({
             <button
               type="submit"
               id="submit-notice-form"
-              className="w-full bg-[#E85C28] hover:bg-stone-900 text-white font-bold p-3 rounded-xl text-xs tracking-widest uppercase transition-all duration-300 mt-6 shadow-sm cursor-pointer"
+              className="w-full bg-[#E85C28] hover:bg-stone-900 text-white font-bold p-3 rounded-xl text-xs tracking-widest uppercase transition-all duration-300 mt-6 shadow-sm cursor-pointer shrink-0"
             >
               {editingItem ? '공지사항 수정 완료' : '새로운 공지사항 게시'}
             </button>

@@ -22,10 +22,12 @@
       "properties": {
         "title": { "type": "string", "description": "Announcement title" },
         "content": { "type": "string", "description": "Markdown text or content detail" },
+        "category": { "type": "string", "description": "Category of notice" },
+        "isPublic": { "type": "boolean", "description": "Is notice visible to the public?" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "content", "createdAt"]
+      "required": ["title", "content", "category", "isPublic", "createdAt"]
     },
     "ProductionApplication": {
       "title": "ProductionApplication",
@@ -59,7 +61,7 @@
         "region": { "type": "string", "description": "Residence region of supporter" },
         "interests": { "type": "string", "description": "Volunteer interests/sections of crew" },
         "availableDays": { "type": "string", "description": "Scheduled days available for participation" },
-        "status": { "type": "string", "enum": ["received", "reviewed", "accepted", "declined"] },
+        "status": { "type": "string", "enum": ["received", "reviewed", "accepted", "declined", "contacted", "completed"] },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["applicantName", "age", "phone", "email", "introduction", "motive", "status", "createdAt"]

@@ -44,6 +44,8 @@ service cloud.firestore {
     function isValidNotice(data) {
       return data.title is string && data.title.size() >= 1 && data.title.size() <= 200
           && data.content is string && data.content.size() <= 50000
+          && data.category is string && data.category.size() >= 1 && data.category.size() <= 100
+          && data.isPublic is bool
           && data.createdAt is timestamp
           && (!('updatedAt' in data) || data.updatedAt is timestamp);
     }
@@ -71,7 +73,7 @@ service cloud.firestore {
           && (!('region' in data) || (data.region is string && data.region.size() <= 300))
           && (!('interests' in data) || (data.interests is string && data.interests.size() <= 300))
           && (!('availableDays' in data) || (data.availableDays is string && data.availableDays.size() <= 300))
-          && data.status is string && (data.status == 'received' || data.status == 'reviewed' || data.status == 'accepted' || data.status == 'declined')
+          && data.status is string && (data.status == 'received' || data.status == 'reviewed' || data.status == 'contacted' || data.status == 'completed' || data.status == 'accepted' || data.status == 'declined')
           && data.createdAt is timestamp;
     }
 
