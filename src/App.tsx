@@ -546,7 +546,13 @@ export default function App() {
       inquiries={inquiries}
       bottomNav={
         currentView !== 'admin' ? (
-          <div className="bg-white border-t border-stone-200 shadow-[0_-4px_12px_rgba(0,0,0,0.04)] h-16 grid grid-cols-5 items-center select-none text-[10px] shrink-0 z-40 navbar-container">
+          <div 
+            className="bg-white border-t border-stone-200 shadow-[0_-4px_12px_rgba(0,0,0,0.04)] grid grid-cols-5 items-center select-none text-[10px] shrink-0 z-40 navbar-container"
+            style={{ 
+              paddingBottom: 'calc(env(safe-area-inset-bottom) / 1.4)', 
+              height: 'calc(4rem + env(safe-area-inset-bottom) * 0.8)' 
+            }}
+          >
             {/* Tab 1 */}
             <button 
               id="tab-btn-home"
