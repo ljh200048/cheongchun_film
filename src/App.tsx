@@ -481,26 +481,30 @@ export default function App() {
     }
   };
 
-  const handleAddInquiry = async (data: Omit<Inquiry, 'id' | 'status' | 'createdAt'>) => {
+  const handleAddInquiry = async (data: Omit<Inquiry, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => {
     const colPath = 'inquiries';
     const id = `inquiry-${Date.now()}`;
     try {
       await setDoc(doc(db, colPath, id), {
         ...cleanUndefined(data),
-        status: 'pending',
-        createdAt: serverTimestamp()
+        status: 'received',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
       });
+      alert('문의가 접수되었습니다.');
     } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, colPath);
+      console.error(err);
+      alert('문의 접수 중 오류가 발생했습니다.');
+      throw err;
     }
   };
 
-  const handleAnswerInquiry = async (id: string, reply: string) => {
+  const handleUpdateInquiryStatus = async (id: string, status: Inquiry['status']) => {
     const colPath = 'inquiries';
     try {
       await updateDoc(doc(db, colPath, id), {
-        reply,
-        status: 'replied'
+        status,
+        updatedAt: serverTimestamp()
       });
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `${colPath}/${id}`);
@@ -712,7 +716,7 @@ export default function App() {
                 onDeleteProduction={handleDeleteProduction}
                 onUpdateSupporterStatus={handleUpdateSupporterStatus}
                 onDeleteSupporter={handleDeleteSupporter}
-                onAnswerInquiry={handleAnswerInquiry}
+                onUpdateInquiryStatus={handleUpdateInquiryStatus}
                 onDeleteInquiry={handleDeleteInquiry}
                 onAddNotice={handleAddNotice}
                 onEditNotice={handleEditNotice}

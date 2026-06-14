@@ -55,15 +55,14 @@ export interface SupporterApplication {
 
 export interface Inquiry {
   id: string;
-  writerName: string;
+  name: string;
+  phone: string;
   email: string;
-  subject: string;
+  category: string;
   message: string;
-  isSecret: boolean;
-  password?: string;
-  reply?: string;
-  status: 'pending' | 'replied';
+  status: 'received' | 'checking' | 'completed' | 'onhold';
   createdAt: any;
+  updatedAt?: any;
 }
 
 export type ViewType = 

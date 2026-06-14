@@ -12,7 +12,7 @@ interface AdminViewProps {
   onDeleteProduction: (id: string) => Promise<void>;
   onUpdateSupporterStatus: (id: string, status: SupporterApplication['status']) => Promise<void>;
   onDeleteSupporter: (id: string) => Promise<void>;
-  onAnswerInquiry: (id: string, reply: string) => Promise<void>;
+  onUpdateInquiryStatus: (id: string, status: Inquiry['status']) => Promise<void>;
   onDeleteInquiry: (id: string) => Promise<void>;
   onAddNotice: (data: Omit<Notice, 'id' | 'createdAt'>) => Promise<void>;
   onEditNotice: (id: string, data: Partial<Notice>) => Promise<void>;
@@ -34,7 +34,7 @@ export default function AdminView({
   onDeleteProduction,
   onUpdateSupporterStatus,
   onDeleteSupporter,
-  onAnswerInquiry,
+  onUpdateInquiryStatus,
   onDeleteInquiry,
   onAddNotice,
   onEditNotice,
@@ -44,7 +44,6 @@ export default function AdminView({
   onDeletePortfolio
 }: AdminViewProps) {
   const [activeTab, setActiveTab] = useState<AdminTab>('production');
-  const [draftReplies, setDraftReplies] = useState<{ [id: string]: string }>({});
 
   // Portfolio Form Fields State
   const [portfolioTitle, setPortfolioTitle] = useState('');
@@ -254,21 +253,9 @@ export default function AdminView({
     }
   };
 
-  const handlePostReply = async (id: string) => {
-    const text = draftReplies[id];
-    if (!text || !text.trim()) {
-      alert('답변 문구를 남겨주세요.');
-      return;
-    }
-
+  const handleStatusChangeInquiry = async (id: string, newStatus: Inquiry['status']) => {
     try {
-      await onAnswerInquiry(id, text);
-      alert('답변이 등록되었습니다!');
-      setDraftReplies(prev => {
-        const copy = { ...prev };
-        delete copy[id];
-        return copy;
-      });
+      await onUpdateInquiryStatus(id, newStatus);
     } catch (e) {
       console.error(e);
     }
@@ -327,7 +314,7 @@ export default function AdminView({
         <div className="bg-[#FDFCF8] p-2 rounded-lg border border-stone-150">
           <p className="text-[7.5px] text-stone-500 font-bold uppercase tracking-wide">미정Q&A</p>
           <p className="text-xs font-black text-emerald-750 mt-0.5">
-            {inquiries.filter(i => !i.reply).length}건
+            {inquiries.filter(i => i.status !== 'completed').length}건
           </p>
         </div>
         <div className="bg-[#FDFCF8] p-2 rounded-lg border border-stone-150">
@@ -595,79 +582,132 @@ export default function AdminView({
         {/* Tab 3: 문의 및 Q&A 답변작성 */}
         {activeTab === 'inquiry' && (
           inquiries.length === 0 ? (
-            <div className="text-center py-12 text-stone-500 text-xs">
-              접수된 포럼 질문이 존재하지 않습니다.
+            <div className="text-center py-12 text-stone-500 text-xs bg-white rounded-2xl border border-stone-150 p-6">
+              접수된 1:1 Q&A 문의가 존재하지 않습니다.
             </div>
           ) : (
             inquiries.map(item => (
               <div
                 id={`admin-inquiry-card-${item.id}`}
                 key={item.id}
-                className="bg-white rounded-2xl border border-stone-200 p-4 space-y-3 shadow-xs text-left"
+                className="bg-white rounded-2xl border border-stone-200 p-4 space-y-4 shadow-xs text-left"
               >
-                <div className="flex justify-between items-start gap-2">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center space-x-1.5 text-[9px] font-mono text-stone-500 font-bold flex-wrap">
-                      <span>작성: {item.writerName}</span>
+                <div className="flex justify-between items-start gap-4 flex-wrap pb-2.5 border-b border-stone-100">
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex items-center space-x-1.5 text-[10px] font-mono text-stone-500 font-bold flex-wrap">
+                      <span className="bg-[#E85C28]/10 text-[#E85C28] px-1.5 py-0.5 rounded text-[8px] font-sans font-black">
+                        {item.category || '기타'}
+                      </span>
                       <span>•</span>
-                      <span className="truncate">메일: {item.email}</span>
-                      <span>•</span>
-                      <span>날짜: {formatDate(item.createdAt)}</span>
+                      <span className="text-stone-850 font-sans font-bold">{item.name}님</span>
                     </div>
-                    <h4 className="text-xs font-black text-stone-900 mt-1 truncate leading-snug">
-                      {item.subject}
-                    </h4>
+                    
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 pt-1.5 text-[9.5px] font-sans font-semibold text-stone-600">
+                      <span className="flex items-center gap-1">
+                        <Phone size={10} className="text-stone-400" />
+                        {item.phone}
+                      </span>
+                      <span className="flex items-center gap-1 truncate">
+                        <Mail size={10} className="text-stone-400" />
+                        {item.email}
+                      </span>
+                      <span>접수일: {formatDate(item.createdAt)}</span>
+                      {item.updatedAt && (
+                        <span>수정일: {formatDate(item.updatedAt)}</span>
+                      )}
+                    </div>
                   </div>
-                  
-                  {item.reply ? (
-                    <span className="text-[8.5px] bg-[#E85C28] text-white font-black px-1.5 py-0.5 rounded inline-flex shrink-0">
-                      ✓ 완료 (replied)
-                    </span>
-                  ) : (
-                    <span className="text-[8.5px] bg-red-50 border border-red-100 text-[#E85C28] font-black px-1.5 py-0.5 rounded inline-flex shrink-0 animate-pulse">
-                      답변 대기
-                    </span>
-                  )}
+
+                  <div className="flex flex-col items-end gap-1.5 shrink-0 select-none">
+                    {item.status === 'received' && (
+                      <span className="text-[8.5px] bg-stone-100 text-stone-700 border border-stone-200 font-black px-2 py-0.5 rounded">
+                        접수됨
+                      </span>
+                    )}
+                    {item.status === 'checking' && (
+                      <span className="text-[8.5px] bg-sky-50 text-sky-700 border border-sky-200 font-black px-2 py-0.5 rounded">
+                        확인중
+                      </span>
+                    )}
+                    {item.status === 'completed' && (
+                      <span className="text-[8.5px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-black px-2 py-0.5 rounded">
+                        답변완료
+                      </span>
+                    )}
+                    {item.status === 'onhold' && (
+                      <span className="text-[8.5px] bg-amber-50 text-amber-700 border border-amber-200 font-black px-2 py-0.5 rounded">
+                        보류
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <div className="text-[10.5px] bg-stone-50 p-2.5 rounded-lg border border-stone-150 leading-relaxed text-stone-750 font-medium">
+                <div className="text-[11px] bg-stone-50 p-3 rounded-xl border border-stone-150 leading-relaxed text-stone-800 font-sans font-medium">
                   {item.message}
                 </div>
 
-                {/* Sub replying console */}
-                <div className="bg-stone-50 p-3 rounded-xl border border-stone-200 space-y-2 mt-2">
-                  <p className="text-[8.5px] text-[#E85C28] uppercase tracking-wider font-sans font-black">공식 답변문 (Reply Writer)</p>
-                  
-                  <textarea
-                    id={`draft-reply-${item.id}`}
-                    value={draftReplies[item.id] !== undefined ? draftReplies[item.id] : item.reply || ''}
-                    onChange={e => {
-                      const text = e.target.value;
-                      setDraftReplies(prev => ({ ...prev, [item.id]: text }));
-                    }}
-                    placeholder="피드백 답변글을 작성해 주세요..."
-                    rows={3}
-                    className="w-full bg-white text-stone-955 text-xs p-2 rounded-lg border border-stone-250 focus:outline-none focus:border-[#E85C28] font-semibold font-sans leading-relaxed"
-                  />
-
-                  <div className="flex justify-between items-center pt-1.5">
+                {/* Status Switcher & Trash Controller */}
+                <div className="flex justify-between items-center pt-1.5 flex-wrap gap-2">
+                  <div className="flex items-center space-x-1 shrink-0">
+                    <span className="text-[9px] font-sans text-stone-500 font-bold mr-1 shrink-0">상태 변경:</span>
+                    
                     <button
-                      id={`trash-inquiry-${item.id}`}
-                      onClick={() => handleTrashInquiry(item.id)}
-                      className="text-stone-400 hover:text-[#E85C28] p-1 cursor-pointer"
-                      title="문의글 영구 삭제"
+                      id={`status-rec-${item.id}`}
+                      onClick={() => handleStatusChangeInquiry(item.id, 'received')}
+                      className={`px-2 py-1 rounded text-[8.5px] font-sans font-extrabold transition-all duration-200 cursor-pointer border ${
+                        item.status === 'received'
+                          ? 'bg-stone-200 border-stone-400 text-stone-800 font-extrabold shadow-xs'
+                          : 'bg-white hover:bg-stone-50 text-stone-500 border-stone-200'
+                      }`}
                     >
-                      <Trash2 size={13} />
+                      접수됨
                     </button>
 
                     <button
-                      id={`submit-reply-${item.id}`}
-                      onClick={() => handlePostReply(item.id)}
-                      className="bg-[#E85C28] hover:bg-stone-900 text-white text-[10px] font-black px-3.5 py-2 rounded-lg transition cursor-pointer"
+                      id={`status-chk-${item.id}`}
+                      onClick={() => handleStatusChangeInquiry(item.id, 'checking')}
+                      className={`px-2 py-1 rounded text-[8.5px] font-sans font-extrabold transition-all duration-200 cursor-pointer border ${
+                        item.status === 'checking'
+                          ? 'bg-sky-100 border-sky-400 text-sky-800 font-extrabold shadow-xs'
+                          : 'bg-white hover:bg-sky-50 text-stone-500 border-stone-200'
+                      }`}
                     >
-                      답변글 게시/수정
+                      확인중
+                    </button>
+
+                    <button
+                      id={`status-cmp-${item.id}`}
+                      onClick={() => handleStatusChangeInquiry(item.id, 'completed')}
+                      className={`px-2 py-1 rounded text-[8.5px] font-sans font-extrabold transition-all duration-200 cursor-pointer border ${
+                        item.status === 'completed'
+                          ? 'bg-emerald-100 border-emerald-450 text-emerald-800 font-extrabold shadow-xs'
+                          : 'bg-white hover:bg-emerald-50 text-stone-500 border-stone-200'
+                      }`}
+                    >
+                      답변완료
+                    </button>
+
+                    <button
+                      id={`status-hld-${item.id}`}
+                      onClick={() => handleStatusChangeInquiry(item.id, 'onhold')}
+                      className={`px-2 py-1 rounded text-[8.5px] font-sans font-extrabold transition-all duration-200 cursor-pointer border ${
+                        item.status === 'onhold'
+                          ? 'bg-amber-100 border-amber-450 text-amber-800 font-extrabold shadow-xs'
+                          : 'bg-white hover:bg-amber-50 text-stone-500 border-stone-200'
+                      }`}
+                    >
+                      보류
                     </button>
                   </div>
+
+                  <button
+                    id={`trash-inquiry-${item.id}`}
+                    onClick={() => handleTrashInquiry(item.id)}
+                    className="p-1 px-2.5 rounded bg-red-50 hover:bg-red-105 hover:text-[#E85C28] text-stone-500 transition cursor-pointer flex items-center space-x-1 border border-red-200 font-bold text-[9px]"
+                  >
+                    <Trash2 size={11} className="text-[#E85C28]" />
+                    <span>삭제</span>
+                  </button>
                 </div>
               </div>
             ))

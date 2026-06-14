@@ -1,101 +1,65 @@
 import React, { useState } from 'react';
-import { HelpCircle, Lock, Key, Plus, X, CornerDownRight, ChevronRight } from 'lucide-react';
+import { HelpCircle, Lock, Trash2, ShieldCheck, ChevronRight, Send, CheckCircle2, Inbox } from 'lucide-react';
 import { Inquiry } from '../types';
 
 interface InquiryViewProps {
   inquiries: Inquiry[];
   isAdmin: boolean;
-  onAdd: (data: Omit<Inquiry, 'id' | 'status' | 'createdAt'>) => Promise<void>;
+  onAdd: (data: { name: string; phone: string; email: string; category: string; message: string }) => Promise<void>;
 }
 
+const CATEGORY_OPTIONS = [
+  { value: '제작', label: '🎥 청춘 필름 제작 문의' },
+  { value: '서포터즈', label: '🤝 로컬 서포터즈 문의' },
+  { value: '협업', label: '🎉 제휴 및 비즈니스 협업' },
+  { value: '기타', label: '💡 기타 일반 문의' }
+];
+
+const STATUS_MAP = {
+  received: { label: '접수됨', color: 'bg-stone-100 text-stone-700 border-stone-200' },
+  checking: { label: '확인중', color: 'bg-sky-50 text-sky-700 border-sky-100' },
+  completed: { label: '답변완료', color: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+  onhold: { label: '보류', color: 'bg-amber-50 text-amber-700 border-amber-100' }
+};
+
 export default function InquiryView({ inquiries, isAdmin, onAdd }: InquiryViewProps) {
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
-  
-  // Custom passcode block state
-  const [promptPasscode, setPromptPasscode] = useState(false);
-  const [enteredPasscode, setEnteredPasscode] = useState('');
-  const [parentTarget, setParentTarget] = useState<Inquiry | null>(null);
-  const [passcodeError, setPasscodeError] = useState(false);
-
-  // New Inquiry Fields State
-  const [writerName, setWriterName] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [subject, setSubject] = useState('');
+  const [category, setCategory] = useState('제작');
   const [message, setMessage] = useState('');
-  const [isSecret, setIsSecret] = useState(false);
-  const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleInquiryClick = (item: Inquiry) => {
-    if (isAdmin) {
-      setSelectedInquiry(item);
-      return;
-    }
-
-    if (item.isSecret) {
-      setParentTarget(item);
-      setEnteredPasscode('');
-      setPasscodeError(false);
-      setPromptPasscode(true);
-    } else {
-      setSelectedInquiry(item);
-    }
-  };
-
-  const handlePasscodeVerify = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!parentTarget) return;
-
-    if (enteredPasscode === parentTarget.password) {
-      setSelectedInquiry(parentTarget);
-      setPromptPasscode(false);
-      setParentTarget(null);
-    } else {
-      setPasscodeError(true);
-    }
-  };
+  const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!writerName || !email || !subject || !message) {
-      alert('필수 사항들을 모두 작성해주세요.');
-      return;
-    }
-
-    if (isSecret && !password) {
-      alert('비밀글 설정 시 비밀번호는 필수입니다.');
+    if (!name.trim() || !phone.trim() || !email.trim() || !message.trim()) {
+      alert('필수 입력 항목을 모두 채워주세요.');
       return;
     }
 
     setIsSubmitting(true);
     try {
       await onAdd({
-        writerName,
-        email,
-        subject,
-        message,
-        isSecret,
-        password: isSecret ? password : undefined
+        name: name.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+        category,
+        message: message.trim()
       });
-      setShowAddModal(false);
-      
-      // Reset
-      setWriterName('');
+      // Reset form
+      setName('');
+      setPhone('');
       setEmail('');
-      setSubject('');
+      setCategory('제작');
       setMessage('');
-      setIsSecret(false);
-      setPassword('');
-      alert('문의가 접수되었습니다.');
     } catch (err) {
-      console.error(err);
+      // Alerting is handled in onAdd callback (App.tsx)
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Safe Date Converter Helper
   const formatDate = (ts: any) => {
     if (!ts) return '';
     try {
@@ -117,298 +81,219 @@ export default function InquiryView({ inquiries, isAdmin, onAdd }: InquiryViewPr
   };
 
   return (
-    <div className="flex-grow flex flex-col pb-12 animate-fadeIn text-stone-850 relative">
+    <div className="flex-grow flex flex-col pb-12 animate-fadeIn text-stone-850 relative bg-[#FDFCF8]">
+      {/* Upper header */}
       <div className="px-4 py-3 bg-white border-b border-stone-200 flex justify-between items-center shrink-0">
-        <span className="text-[10px] uppercase font-sans tracking-wider text-stone-800 font-extrabold">독립 1:1 Q&A 포럼</span>
-        <button
-          id="trigger-add-inquiry-btn"
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center space-x-1.5 bg-[#E85C28] hover:bg-stone-900 text-white px-3.5 py-1.5 rounded-full text-[11px] font-bold transition duration-200 cursor-pointer"
-        >
-          <Plus size={13} />
-          <span>질문 남기기</span>
-        </button>
-      </div>
-
-      {/* Inquiries Bulletins List */}
-      <div className="divide-y divide-stone-150 bg-white">
-        {inquiries.length === 0 ? (
-          <div className="py-16 text-center text-stone-550 font-sans text-xs leading-relaxed bg-[#FDFCF8]">
-            게시판에 접수된 질문이 아직 존재하지 않습니다.
-          </div>
-        ) : (
-          inquiries.map(item => (
-            <button
-              id={`inquiry-row-${item.id}`}
-              key={item.id}
-              onClick={() => handleInquiryClick(item)}
-              className="w-full p-4 flex items-center justify-between text-left hover:bg-stone-50 transition select-none cursor-pointer border-b border-stone-150"
-            >
-              <div className="space-y-1.5 flex-1 pr-4 min-w-0">
-                <div className="flex items-center space-x-2 text-[9px] font-mono font-bold text-stone-500">
-                  <span>{item.writerName[0]}*필름</span>
-                  <span className="text-stone-300">•</span>
-                  <span>{formatDate(item.createdAt)}</span>
-                </div>
-                
-                <div className="flex items-center space-x-1.5">
-                  {item.isSecret && <Lock size={12} className="text-[#E85C28] shrink-0" />}
-                  <h4 className="font-sans text-[12.5px] font-extrabold text-[#1A1A1A] truncate leading-snug">
-                    {item.subject}
-                  </h4>
-                </div>
-
-                <div className="flex items-center space-x-1.5 text-[10px] mt-1">
-                  {item.status === 'replied' ? (
-                    <span className="inline-flex items-center text-emerald-800 font-bold bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded text-[8.5px] tracking-tight">
-                      ✓ 답장 완료
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center text-stone-600 bg-stone-100 border border-stone-200 px-1.5 py-0.5 rounded text-[8.5px] tracking-tight font-bold">
-                      접수 대기
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <ChevronRight size={14} className="text-stone-400 shrink-0" />
-            </button>
-          ))
+        <span className="text-[10px] uppercase font-sans tracking-wider text-stone-800 font-extrabold flex items-center gap-1.5">
+          <HelpCircle size={13} className="text-[#E85C28]" />
+          <span>1:1 청춘 소통 채널</span>
+        </span>
+        {isAdmin && (
+          <span className="bg-emerald-50 text-emerald-700 text-[8.5px] font-bold px-2 py-0.5 rounded border border-emerald-100 flex items-center gap-1">
+            <ShieldCheck size={10} />
+            <span>관리자 모드</span>
+          </span>
         )}
       </div>
 
-      {/* Inquiry Detail Overlay */}
-      {selectedInquiry && (
-        <div className="absolute inset-0 bg-[#FDFCF8] z-55 overflow-y-auto flex flex-col p-4 animate-fadeIn">
-          <div className="flex items-center justify-between mb-4 border-b border-stone-200 pb-2">
-            <span className="text-[10px] font-sans font-black text-stone-850 uppercase tracking-widest flex items-center gap-1">
-              <HelpCircle size={11} className="text-[#E85C28]" />
-              INQUIRY DISPATCH DISCLOSURE
-            </span>
-            <button
-              id="close-inquiry-detail"
-              onClick={() => setSelectedInquiry(null)}
-              className="w-8 h-8 rounded-full bg-white border border-stone-200 flex items-center justify-center text-stone-800 hover:text-[#E85C28] transition duration-200 cursor-pointer"
-            >
-              <X size={15} />
-            </button>
+      {!isAdmin ? (
+        /* Regular User: Form only */
+        <div className="p-5 max-w-lg mx-auto w-full space-y-6">
+          <div className="text-center space-y-1 select-none pt-2">
+            <h3 className="font-sans text-sm font-black text-stone-900 tracking-tight">어떤 고민이나 질문이든 들려주세요</h3>
+            <p className="text-[10px] text-stone-500 font-medium">청춘필름 크리에이터와 1:1로 빠르게 소통하실 수 있습니다.</p>
           </div>
 
-          <div className="space-y-4">
-            {/* User message */}
-            <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-3 shadow-sm">
-              <div className="flex justify-between items-center text-[9px] text-stone-500 font-sans font-bold">
-                <span>작성자: {selectedInquiry.writerName}</span>
-                <span>접수일: {formatDate(selectedInquiry.createdAt)}</span>
-              </div>
-              <h3 className="font-sans text-base font-black text-[#1A1A1A] leading-tight border-b border-stone-100 pb-2.5">
-                {selectedInquiry.subject}
-              </h3>
-              <p className="text-[11.5px] text-stone-700 leading-relaxed font-sans whitespace-pre-wrap pt-2 font-medium">
-                {selectedInquiry.message}
-              </p>
-            </div>
-
-            {/* Admin Response Thread */}
-            {selectedInquiry.reply ? (
-              <div className="bg-amber-50/70 p-5 rounded-3xl border border-amber-200 space-y-3 text-left shadow-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-sans font-black text-[#E85C28] tracking-widest uppercase flex items-center gap-1">
-                    <CornerDownRight size={11} className="text-[#E85C28]" />
-                    CHUNGCHUN FILM REPLY
-                  </span>
-                  <span className="text-[8.5px] bg-[#E85C28] text-white font-black px-1.5 py-0.5 rounded uppercase">
-                    OFFICIAL
-                  </span>
-                </div>
-                <p className="text-[11.5px] text-stone-800 leading-relaxed font-sans font-medium whitespace-pre-wrap">
-                  {selectedInquiry.reply}
-                </p>
-              </div>
-            ) : (
-              <div className="p-6 text-center bg-white rounded-3xl border border-dashed border-stone-300 text-[10.5px] text-stone-500 font-sans leading-relaxed font-bold">
-                담당 크리에이터가 지원자님의 메세지를 검토 중이며,<br/>
-                조금만 기다려주시면 정성 담긴 답변을 드리겠습니다.
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Secret Inquiry Numeric Passcode Entry Sheet */}
-      {promptPasscode && parentTarget && (
-        <div className="absolute inset-0 bg-[#FDFCF8]/95 backdrop-blur-sm z-60 flex items-center justify-center p-6 animate-fadeIn select-none">
-          <form 
-            onSubmit={handlePasscodeVerify}
-            className="w-full max-w-xs bg-white border border-stone-250 rounded-3xl p-6 text-center space-y-5 shadow-2xl relative"
-          >
-            <button
-              type="button"
-              onClick={() => {
-                setPromptPasscode(false);
-                setParentTarget(null);
-                setPasscodeError(false);
-              }}
-              className="absolute top-4 right-4 text-stone-400 hover:text-[#E85C28] transition cursor-pointer"
-            >
-              <X size={15} />
-            </button>
-
-            <div className="w-12 h-12 rounded-full bg-red-50 text-[#E85C28] flex items-center justify-center mx-auto border border-red-100 shadow-sm">
-              <Lock size={18} />
-            </div>
-
+          <form onSubmit={handleSubmit} className="bg-white rounded-3xl border border-stone-200 p-5 space-y-4 shadow-xs text-left">
+            {/* Name field */}
             <div className="space-y-1">
-              <h3 className="font-sans text-[14px] font-black text-stone-900">비밀글 잠금 해제</h3>
-              <p className="text-[10px] text-stone-500 font-bold">글 작성 시 입력하신 패스워드를 입력해 주세요.</p>
+              <label className="block text-[9.5px] uppercase font-sans font-bold tracking-wider text-stone-500 mb-0.5">작성인 성함 *</label>
+              <input
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="성함 혹은 닉네임을 입력하세요"
+                className="w-full bg-stone-50 border border-stone-250 rounded-xl p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28] font-bold"
+                required
+              />
             </div>
 
-            <input
-              type="password"
-              value={enteredPasscode}
-              onChange={e => {
-                setEnteredPasscode(e.target.value);
-                setPasscodeError(false);
-              }}
-              placeholder="••••"
-              className="w-full text-center tracking-widest bg-stone-50 border border-stone-250 rounded-xl p-3 focus:outline-none focus:border-[#E85C28] text-stone-950 text-lg font-black"
-              required
-              maxLength={16}
-              autoFocus
-            />
-
-            {passcodeError && (
-              <p className="text-[9.5px] text-[#E85C28] font-bold animate-shake font-sans">
-                ⚠️ 패스워드가 올바르지 않습니다.
-              </p>
-            )}
-
-            <button
-              type="submit"
-              className="w-full bg-[#E85C28] text-white hover:bg-stone-900 font-bold p-2.5 rounded-xl text-xs tracking-widest uppercase transition duration-200 cursor-pointer shadow-sm"
-            >
-              잠금 해제 확인
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* Add Inquiry modal */}
-      {showAddModal && (
-        <div className="absolute inset-0 bg-[#FDFCF8] z-55 flex flex-col p-5 animate-slideUp">
-          <div className="flex items-center justify-between pb-3 border-b border-stone-200 mb-4 select-none header-wrapper shrink-0">
-            <h3 className="text-xs font-sans tracking-widest text-stone-900 font-black uppercase">
-              LEAVING NEW QUESTION SHEET
-            </h3>
-            <button
-              id="close-add-inquiry-modal"
-              onClick={() => {
-                setShowAddModal(false);
-                setWriterName('');
-                setEmail('');
-                setSubject('');
-                setMessage('');
-                setIsSecret(false);
-                setPassword('');
-              }}
-              className="text-stone-500 hover:text-[#E85C28] transition cursor-pointer"
-            >
-              <X size={18} />
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="flex-grow overflow-y-auto space-y-4 text-stone-850 pr-1">
+            {/* Grid for Contact / Email */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="block text-[10px] uppercase font-sans font-bold tracking-wider text-stone-600">작성자 닉네임 *</label>
+                <label className="block text-[9.5px] uppercase font-sans font-bold tracking-wider text-stone-500 mb-0.5">연락처 *</label>
                 <input
-                  type="text"
-                  value={writerName}
-                  onChange={e => setWriterName(e.target.value)}
-                  placeholder="예: 스물다섯필름"
-                  className="w-full bg-white border border-stone-250 rounded-lg p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28]"
+                  type="tel"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  placeholder="010-0000-0000"
+                  className="w-full bg-stone-50 border border-stone-250 rounded-xl p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28] font-bold"
                   required
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="block text-[10px] uppercase font-sans font-bold tracking-wider text-stone-600">회신 이메일 주소 *</label>
+                <label className="block text-[9.5px] uppercase font-sans font-bold tracking-wider text-stone-500 mb-0.5">이메일 주소 *</label>
                 <input
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="example@gmail.com"
-                  className="w-full bg-white border border-stone-250 rounded-lg p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28]"
+                  placeholder="your@email.com"
+                  className="w-full bg-stone-50 border border-stone-250 rounded-xl p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28] font-bold"
                   required
                 />
               </div>
             </div>
 
+            {/* Category selection */}
             <div className="space-y-1">
-              <label className="block text-[10px] uppercase font-sans font-bold tracking-wider text-stone-600">문의 제목 *</label>
-              <input
-                type="text"
-                value={subject}
-                onChange={e => setSubject(e.target.value)}
-                placeholder="스물두살인데 참여 가능한 대상인가요?"
-                className="w-full bg-white border border-stone-250 rounded-lg p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28]"
-                required
-              />
+              <label className="block text-[9.5px] uppercase font-sans font-bold tracking-wider text-stone-500 mb-0.5">문의 분류 *</label>
+              <select
+                value={category}
+                onChange={e => setCategory(e.target.value)}
+                className="w-full bg-stone-50 border border-stone-250 rounded-xl p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28] font-bold"
+              >
+                {CATEGORY_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
+            {/* Message payload */}
             <div className="space-y-1">
-              <label className="block text-[10px] uppercase font-sans font-bold tracking-wider text-stone-600">문의 상세 질의 *</label>
+              <label className="block text-[9.5px] uppercase font-sans font-bold tracking-wider text-stone-500 mb-0.5">문의 내용 *</label>
               <textarea
                 value={message}
                 onChange={e => setMessage(e.target.value)}
-                placeholder="비제작 문의, 행사 제안 및 협업 제의 등 질문 내용을 자유롭게 기재해 주세요..."
-                rows={4}
-                className="w-full bg-white border border-stone-250 rounded-lg p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28] leading-relaxed"
+                placeholder="문의하실 구체적인 사연이나 질문 내용을 편하게 적어주세요. 신속하고 친절하게 답변드리겠습니다."
+                rows={5}
+                className="w-full bg-stone-50 border border-stone-250 rounded-xl p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28] leading-relaxed font-sans"
                 required
               />
-            </div>
-
-            {/* Privacy switches */}
-            <div className="p-3 bg-white rounded-xl border border-stone-200 space-y-3.5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h5 className="text-[11.5px] font-sans font-extrabold text-stone-900">비밀글로 격리 설정</h5>
-                  <p className="text-[9px] text-stone-500 font-sans font-medium leading-none mt-1">작성자와 관리자만 비밀번호를 통해 확인 가능</p>
-                </div>
-                <input
-                  type="checkbox"
-                  id="checkbox-secret-switch"
-                  checked={isSecret}
-                  onChange={e => setIsSecret(e.target.checked)}
-                  className="w-4 h-4 rounded text-[#E85C28] focus:ring-[#E85C28] bg-white border-stone-300 shrink-0 cursor-pointer"
-                />
-              </div>
-
-              {isSecret && (
-                <div className="space-y-1 mt-2.5 animate-slideDown">
-                  <label className="block text-[10px] uppercase font-sans font-bold tracking-wider text-stone-600">비밀글 비밀번호 (4자리 이상) *</label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="임시 암호 입력"
-                    className="w-full bg-white border border-stone-250 rounded-lg p-2.5 text-xs text-stone-950 focus:outline-none focus:border-[#E85C28] font-bold"
-                    maxLength={16}
-                    required={isSecret}
-                  />
-                </div>
-              )}
             </div>
 
             <button
               type="submit"
-              id="submit-inquiry-req"
               disabled={isSubmitting}
-              className="w-full bg-[#E85C28] disabled:opacity-50 text-white font-bold p-3 rounded-xl text-xs tracking-widest uppercase transition-all duration-300 mt-6 shadow-sm cursor-pointer"
+              className="w-full bg-[#E85C28] hover:bg-stone-950 disabled:opacity-50 text-white font-extrabold p-3 rounded-2xl text-xs tracking-widest uppercase transition-all duration-300 mt-6 shadow-sm cursor-pointer flex items-center justify-center space-x-1.5 active:scale-[0.98]"
             >
-              {isSubmitting ? '전송 채널 연결 중...' : '원클릭 1:1 비밀 문의 전송'}
+              <Send size={13} />
+              <span>{isSubmitting ? '전송 처리 중...' : '문의하기 및 전송'}</span>
             </button>
           </form>
+
+          {/* Micro layout spacing */}
+          <div className="text-center select-none font-mono text-[8.5px] text-stone-400">
+            CHUNGCHUN FILM 1:1 SECURE DIALOGUE UNIT
+          </div>
+        </div>
+      ) : (
+        /* Admin User: List of inquiries and Detail drawer */
+        <div className="flex-grow flex flex-col bg-[#FDFCF8]">
+          <div className="p-4 bg-amber-50/50 border-b border-stone-200 text-left select-none">
+            <p className="text-[10px] font-sans font-bold text-amber-800 leading-normal">
+              💡 관리자용 빠른 보관함: 현재 아카이브에 접수된 {inquiries.length}건의 모든 1:1 Q&A를 실시간으로 모니터링하고 가공할 수 있습니다.
+            </p>
+          </div>
+
+          <div className="divide-y divide-stone-150 bg-white">
+            {inquiries.length === 0 ? (
+              <div className="py-20 text-center text-stone-500 font-sans text-xs bg-[#FDFCF8] flex flex-col items-center justify-center space-y-2">
+                <Inbox size={24} className="text-stone-300" />
+                <span>데이터베이스에 접수된 1:1 문의글이 아직 없습니다.</span>
+              </div>
+            ) : (
+              inquiries.map(item => {
+                const statusMeta = STATUS_MAP[item.status] || { label: item.status, color: 'bg-stone-100 text-stone-700' };
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setSelectedInquiry(item)}
+                    className="w-full p-4 flex items-center justify-between text-left hover:bg-stone-50 transition select-none cursor-pointer border-b border-stone-150"
+                  >
+                    <div className="space-y-1.5 flex-1 pr-4 min-w-0">
+                      <div className="flex items-center space-x-2 text-[9px] font-mono font-bold text-stone-500">
+                        <span className="bg-stone-100 text-stone-600 px-1 py-0.5 rounded text-[8px] font-bold">
+                          {item.category || '일반'}
+                        </span>
+                        <span>•</span>
+                        <span>{item.name}님</span>
+                        <span>•</span>
+                        <span>{formatDate(item.createdAt)}</span>
+                      </div>
+                      
+                      <h4 className="font-sans text-[12.5px] font-extrabold text-[#1A1A1A] truncate leading-snug">
+                        {item.message.slice(0, 50)}...
+                      </h4>
+
+                      <div className="flex items-center space-x-1.5 mt-1">
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[8.5px] border font-bold ${statusMeta.color}`}>
+                          {statusMeta.label}
+                        </span>
+                      </div>
+                    </div>
+
+                    <ChevronRight size={14} className="text-stone-400 shrink-0" />
+                  </button>
+                );
+              })
+            )}
+          </div>
+
+          {/* Quick Details overlay modal for admin inside Inquiry list */}
+          {selectedInquiry && (
+            <div className="fixed inset-0 bg-[#FDFCF8] z-55 overflow-y-auto flex flex-col p-4 animate-fadeIn">
+              <div className="flex items-center justify-between mb-4 border-b border-stone-200 pb-2 shrink-0">
+                <span className="text-[10px] font-mono font-extrabold text-stone-800 uppercase tracking-widest flex items-center gap-1.5">
+                  <ShieldCheck size={12} className="text-[#E85C28]" />
+                  <span>INQUIRY SHEET: {selectedInquiry.id.slice(0, 10)}</span>
+                </span>
+                <button
+                  onClick={() => setSelectedInquiry(null)}
+                  className="w-8 h-8 rounded-full bg-white border border-stone-200 flex items-center justify-center text-stone-800 hover:text-[#E85C28] transition duration-200 cursor-pointer"
+                >
+                  X
+                </button>
+              </div>
+
+              <div className="space-y-5 max-w-lg mx-auto w-full pb-10 text-left">
+                <div className="bg-white p-5 rounded-3xl border border-stone-200 space-y-4 shadow-sm">
+                  <div className="flex flex-col space-y-1 border-b border-stone-100 pb-3">
+                    <span className="text-[8px] tracking-widest uppercase text-white bg-[#E85C28] px-2 py-0.5 rounded font-sans font-black self-start">
+                      {selectedInquiry.category || '일반'}
+                    </span>
+                    <h3 className="font-sans text-xs font-black text-stone-900 mt-2">
+                      {selectedInquiry.name}님의 1:1 상담서
+                    </h3>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px] text-stone-500 font-sans font-semibold pt-1">
+                      <span>연락처: {selectedInquiry.phone}</span>
+                      <span>이메일: {selectedInquiry.email}</span>
+                      <span>접수일: {formatDate(selectedInquiry.createdAt)}</span>
+                      {selectedInquiry.updatedAt && (
+                        <span>수정일: {formatDate(selectedInquiry.updatedAt)}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h5 className="text-[9px] uppercase font-sans font-bold tracking-wider text-stone-400 mb-1">상세 전송 메세지</h5>
+                    <p className="text-[11.5px] text-stone-800 leading-relaxed font-sans whitespace-pre-wrap font-medium">
+                      {selectedInquiry.message}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 space-y-2">
+                  <p className="text-[9px] text-[#E85C28] font-bold">⚠️ 빠른 관리 정보</p>
+                  <p className="text-[10px] text-stone-600 leading-normal font-sans font-medium">
+                    해당 접수건의 진행 상태를 가공하거나 영구 삭제를 진행하실 수 있습니다. 상세 제어 단은 메인 페이지 오른쪽 위의 [관리자 제어 단]에서 더욱 풍부하게 제공됩니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
