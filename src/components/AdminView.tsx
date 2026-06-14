@@ -208,12 +208,12 @@ export default function AdminView({
                     onChange={e => handleStatusChangeProduction(item.id, e.target.value as any)}
                     className="bg-stone-50 border border-stone-250 text-stone-900 text-[10px] rounded p-1.5 font-bold focus:outline-none focus:border-[#E85C28] shrink-0"
                   >
-                    <option value="received">📥 대기 (received)</option>
-                    <option value="reviewed">✍️ 검토 (reviewed)</option>
-                    <option value="contacted">📞 연락 (contacted)</option>
-                    <option value="completed">🎉 완료 (completed)</option>
-                    <option value="accepted">✓ 확정 (accepted)</option>
-                    <option value="declined">✕ 보류 (declined)</option>
+                    <option value="received">📥 접수됨</option>
+                    <option value="contacted">📞 연락완료</option>
+                    <option value="reviewed">🔄 진행중</option>
+                    <option value="completed">✅ 완료</option>
+                    <option value="accepted">✓ 확정</option>
+                    <option value="declined">✕ 보류</option>
                   </select>
                 </div>
 
@@ -290,12 +290,12 @@ export default function AdminView({
                     onChange={e => handleStatusChangeSupporter(item.id, e.target.value as any)}
                     className="bg-stone-50 border border-stone-250 text-stone-900 text-[10px] rounded p-1.5 font-bold focus:outline-none focus:border-[#E85C28] shrink-0"
                   >
-                    <option value="received">📥 대기 (received)</option>
-                    <option value="reviewed">✍️ 검토 (reviewed)</option>
-                    <option value="contacted">📞 연락 (contacted)</option>
-                    <option value="completed">🎉 완료 (completed)</option>
-                    <option value="accepted">✓ 합격 (accepted)</option>
-                    <option value="declined">✕ 불합격 (declined)</option>
+                    <option value="received">📥 접수됨</option>
+                    <option value="contacted">📞 연락완료</option>
+                    <option value="reviewed">🔄 진행중</option>
+                    <option value="completed">✅ 완료</option>
+                    <option value="accepted">✓ 합격</option>
+                    <option value="declined">✕ 불합격</option>
                   </select>
                 </div>
 
