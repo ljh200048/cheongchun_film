@@ -1,34 +1,49 @@
 import React, { useState } from 'react';
-import { Mail, Phone, Calendar, ClipboardCheck, Trash2, ExternalLink } from 'lucide-react';
-import { ProductionApplication, SupporterApplication, Inquiry } from '../types';
+import { Mail, Phone, Calendar, ClipboardCheck, Trash2, ExternalLink, Edit } from 'lucide-react';
+import { ProductionApplication, SupporterApplication, Inquiry, Notice } from '../types';
 
 interface AdminViewProps {
   productionApps: ProductionApplication[];
   supporterApps: SupporterApplication[];
   inquiries: Inquiry[];
+  notices: Notice[];
   onUpdateProductionStatus: (id: string, status: ProductionApplication['status']) => Promise<void>;
   onDeleteProduction: (id: string) => Promise<void>;
   onUpdateSupporterStatus: (id: string, status: SupporterApplication['status']) => Promise<void>;
   onDeleteSupporter: (id: string) => Promise<void>;
   onAnswerInquiry: (id: string, reply: string) => Promise<void>;
   onDeleteInquiry: (id: string) => Promise<void>;
+  onAddNotice: (data: Omit<Notice, 'id' | 'createdAt'>) => Promise<void>;
+  onEditNotice: (id: string, data: Partial<Notice>) => Promise<void>;
+  onDeleteNotice: (id: string) => Promise<void>;
 }
 
-type AdminTab = 'production' | 'supporter' | 'inquiry';
+type AdminTab = 'production' | 'supporter' | 'inquiry' | 'notice';
 
 export default function AdminView({
   productionApps,
   supporterApps,
   inquiries,
+  notices,
   onUpdateProductionStatus,
   onDeleteProduction,
   onUpdateSupporterStatus,
   onDeleteSupporter,
   onAnswerInquiry,
-  onDeleteInquiry
+  onDeleteInquiry,
+  onAddNotice,
+  onEditNotice,
+  onDeleteNotice
 }: AdminViewProps) {
   const [activeTab, setActiveTab] = useState<AdminTab>('production');
   const [draftReplies, setDraftReplies] = useState<{ [id: string]: string }>({});
+
+  // Notice Form Fields State
+  const [noticeTitle, setNoticeTitle] = useState('');
+  const [noticeContent, setNoticeContent] = useState('');
+  const [noticeCategory, setNoticeCategory] = useState('일반');
+  const [noticeIsPublic, setNoticeIsPublic] = useState(true);
+  const [editingNoticeId, setEditingNoticeId] = useState<string | null>(null);
 
   const getMs = (dateVal: any) => {
     if (!dateVal) return 0;
@@ -44,6 +59,61 @@ export default function AdminView({
 
   const sortedProductionApps = [...productionApps].sort((a, b) => getMs(b.createdAt) - getMs(a.createdAt));
   const sortedSupporterApps = [...supporterApps].sort((a, b) => getMs(b.createdAt) - getMs(a.createdAt));
+  const sortedNotices = [...notices].sort((a, b) => getMs(b.createdAt) - getMs(a.createdAt));
+
+  const resetNoticeForm = () => {
+    setNoticeTitle('');
+    setNoticeContent('');
+    setNoticeCategory('일반');
+    setNoticeIsPublic(true);
+    setEditingNoticeId(null);
+  };
+
+  const handleNoticeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!noticeTitle.trim() || !noticeContent.trim()) {
+      alert('제목과 내용을 모두 입력해 주세요.');
+      return;
+    }
+
+    try {
+      const pkg = {
+        title: noticeTitle.trim(),
+        content: noticeContent.trim(),
+        category: noticeCategory,
+        isPublic: noticeIsPublic,
+        isPublished: noticeIsPublic
+      };
+
+      if (editingNoticeId) {
+        await onEditNotice(editingNoticeId, pkg);
+        resetNoticeForm();
+      } else {
+        await onAddNotice(pkg);
+        resetNoticeForm();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleStartEditNotice = (item: Notice) => {
+    setEditingNoticeId(item.id);
+    setNoticeTitle(item.title);
+    setNoticeContent(item.content);
+    setNoticeCategory(item.category || '일반');
+    setNoticeIsPublic(item.isPublic !== false);
+  };
+
+  const handleRemoveNotice = async (id: string) => {
+    if (confirm('이 공지사항을 정말 영구 삭제하시겠습니까?')) {
+      try {
+        await onDeleteNotice(id);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
 
   const handleStatusChangeProduction = async (id: string, newStatus: any) => {
     try {
@@ -122,25 +192,29 @@ export default function AdminView({
   return (
     <div className="flex-grow flex flex-col pb-16 animate-fadeIn text-stone-850 bg-[#FDFCF8] font-sans">
       {/* Stats Counter Cards Grid */}
-      <div className="p-3 bg-white border-b border-stone-200 grid grid-cols-3 gap-2.5 text-center select-none font-sans shrink-0">
-        <div className="bg-[#FDFCF8] p-2.5 rounded-xl border border-stone-150">
-          <p className="text-[8.5px] text-stone-500 font-bold uppercase tracking-wide">제작요청</p>
-          <p className="text-sm font-black text-stone-900 mt-0.5">{productionApps.length}건</p>
+      <div className="p-3 bg-white border-b border-stone-200 grid grid-cols-4 gap-2 text-center select-none font-sans shrink-0">
+        <div className="bg-[#FDFCF8] p-2 rounded-lg border border-stone-150">
+          <p className="text-[7.5px] text-stone-500 font-bold uppercase tracking-wide">제작요청</p>
+          <p className="text-xs font-black text-stone-900 mt-0.5">{productionApps.length}건</p>
         </div>
-        <div className="bg-[#FDFCF8] p-2.5 rounded-xl border border-stone-150">
-          <p className="text-[8.5px] text-stone-500 font-bold uppercase tracking-wide">서포터즈</p>
-          <p className="text-sm font-black text-[#E85C28] mt-0.5">{supporterApps.length}명</p>
+        <div className="bg-[#FDFCF8] p-2 rounded-lg border border-stone-150">
+          <p className="text-[7.5px] text-stone-500 font-bold uppercase tracking-wide">서포터즈</p>
+          <p className="text-xs font-black text-[#E85C28] mt-0.5">{supporterApps.length}명</p>
         </div>
-        <div className="bg-[#FDFCF8] p-2.5 rounded-xl border border-stone-150">
-          <p className="text-[8.5px] text-stone-500 font-bold uppercase tracking-wide">미정Q&A</p>
-          <p className="text-sm font-black text-emerald-700 mt-0.5">
+        <div className="bg-[#FDFCF8] p-2 rounded-lg border border-stone-150">
+          <p className="text-[7.5px] text-stone-500 font-bold uppercase tracking-wide">미정Q&A</p>
+          <p className="text-xs font-black text-emerald-750 mt-0.5">
             {inquiries.filter(i => !i.reply).length}건
           </p>
+        </div>
+        <div className="bg-[#FDFCF8] p-2 rounded-lg border border-stone-150">
+          <p className="text-[7.5px] text-stone-500 font-bold uppercase tracking-wide">공지사항</p>
+          <p className="text-xs font-black text-sky-700 mt-0.5">{notices.length}개</p>
         </div>
       </div>
 
       {/* Sub-Tabs Navigator */}
-      <div className="bg-white flex border-b border-stone-200 text-stone-500 text-[11px] shrink-0 font-bold">
+      <div className="bg-white flex border-b border-stone-200 text-stone-500 text-[10.5px] shrink-0 font-bold">
         <button
           id="btn-admin-tab-production"
           onClick={() => setActiveTab('production')}
@@ -150,7 +224,7 @@ export default function AdminView({
               : 'border-transparent hover:text-stone-900'
           }`}
         >
-          제작신청 ({productionApps.length})
+          제작 ({productionApps.length})
         </button>
         <button
           id="btn-admin-tab-supporter"
@@ -165,14 +239,29 @@ export default function AdminView({
         </button>
         <button
           id="btn-admin-tab-inquiry"
-          onClick={() => setActiveTab('inquiry')}
+          onClick={() => {
+            setActiveTab('inquiry');
+          }}
           className={`flex-1 py-3 text-center border-b-2 transition-all cursor-pointer ${
             activeTab === 'inquiry' 
               ? 'border-[#E85C28] text-stone-900 bg-stone-50' 
               : 'border-transparent hover:text-stone-900'
           }`}
         >
-          문의내역 ({inquiries.length})
+          Q&A ({inquiries.length})
+        </button>
+        <button
+          id="btn-admin-tab-notice"
+          onClick={() => {
+            setActiveTab('notice');
+          }}
+          className={`flex-1 py-3 text-center border-b-2 transition-all cursor-pointer ${
+            activeTab === 'notice' 
+              ? 'border-[#E85C28] text-stone-900 bg-stone-50' 
+              : 'border-transparent hover:text-stone-900'
+          }`}
+        >
+          공지 ({notices.length})
         </button>
       </div>
 
@@ -443,6 +532,157 @@ export default function AdminView({
               </div>
             ))
           )
+        )}
+
+        {/* Tab 4: 공지사항 작성 및 관리 */}
+        {activeTab === 'notice' && (
+          <div className="space-y-4 animate-fadeIn">
+            {/* Notice Create/Edit Form */}
+            <form onSubmit={handleNoticeSubmit} className="bg-white rounded-2xl border border-stone-200 p-4 space-y-3.5 shadow-sm text-left">
+              <h4 className="text-xs font-black text-stone-900 tracking-tight uppercase flex items-center gap-1.5 border-b border-stone-100 pb-2">
+                <span className="text-[#E85C28]">📢</span> 
+                {editingNoticeId ? '공지사항 수정하기' : '새로운 공지사항 작성'}
+              </h4>
+              
+              <div className="space-y-3 pt-1">
+                <div>
+                  <label className="block text-[8.5px] uppercase font-bold text-stone-500 mb-1">공지사항 제목</label>
+                  <input
+                    type="text"
+                    value={noticeTitle}
+                    onChange={e => setNoticeTitle(e.target.value)}
+                    placeholder="공지 제목을 입력하세요 (예: 청춘필름 가을 모집 안내)"
+                    className="w-full bg-stone-50 border border-stone-250 text-stone-900 text-xs rounded-lg p-2.5 font-bold focus:outline-none focus:border-[#E85C28]"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[8.5px] uppercase font-bold text-stone-500 mb-1">카테고리</label>
+                    <select
+                      value={noticeCategory}
+                      onChange={e => setNoticeCategory(e.target.value)}
+                      className="w-full bg-stone-50 border border-stone-250 text-stone-900 text-xs rounded-lg p-2.5 font-bold focus:outline-none focus:border-[#E85C28]"
+                    >
+                      <option value="일반">일반</option>
+                      <option value="행사">행사</option>
+                      <option value="모집">모집</option>
+                      <option value="안내">안내</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[8.5px] uppercase font-bold text-stone-500 mb-1">작성 공개 설정</label>
+                    <select
+                      value={noticeIsPublic ? 'true' : 'false'}
+                      onChange={e => setNoticeIsPublic(e.target.value === 'true')}
+                      className="w-full bg-stone-50 border border-stone-250 text-stone-900 text-xs rounded-lg p-2.5 font-bold focus:outline-none focus:border-[#E85C28]"
+                    >
+                      <option value="true">🔓 즉시 공개 (Published)</option>
+                      <option value="false">🔒 비공개 저장 (Private Draft)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[8.5px] uppercase font-bold text-stone-500 mb-1">공지 세부 내용</label>
+                  <textarea
+                    value={noticeContent}
+                    onChange={e => setNoticeContent(e.target.value)}
+                    placeholder="공지 사항의 자세한 배경, 일정, 장소 등의 혜택을 입력해주세요..."
+                    rows={5}
+                    className="w-full bg-stone-50 border border-stone-250 text-stone-900 text-xs rounded-lg p-2.5 font-semibold focus:outline-none focus:border-[#E85C28] leading-relaxed"
+                    required
+                  />
+                </div>
+
+                <div className="flex space-x-2 pt-1 border-t border-stone-100 mt-2">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-[#E85C28] hover:bg-stone-900 text-white font-black p-2.5 rounded-lg text-[10.5px] tracking-wider transition-all duration-200 cursor-pointer active:scale-95 shadow-sm"
+                  >
+                    {editingNoticeId ? '공지사항 수정 완료' : '새로운 공지사항 게시'}
+                  </button>
+                  {editingNoticeId && (
+                    <button
+                      type="button"
+                      onClick={resetNoticeForm}
+                      className="bg-stone-150 hover:bg-stone-250 text-stone-900 font-bold p-2.5 rounded-lg text-[10.5px] transition duration-200 cursor-pointer"
+                    >
+                      취소
+                    </button>
+                  )}
+                </div>
+              </div>
+            </form>
+
+            {/* List of Notices under Admin notices management */}
+            <div className="space-y-3 pt-2">
+              <h4 className="text-[10px] font-black text-stone-500 tracking-wider uppercase pl-1">
+                게시 중인 공지 목록 (최신순)
+              </h4>
+
+              {sortedNotices.length === 0 ? (
+                <div className="text-center py-12 text-stone-500 text-xs bg-white rounded-xl border border-stone-200">
+                  게시된 아카이브 공지사항이 아직 존재하지 않습니다.
+                </div>
+              ) : (
+                sortedNotices.map(item => (
+                  <div
+                    key={item.id}
+                    className="bg-white rounded-2xl border border-stone-200 p-4 space-y-3.5 shadow-xs text-left"
+                  >
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center space-x-2 text-[9px] font-sans font-black flex-wrap gap-y-1">
+                          <span className="bg-[#E85C28]/10 text-[#E85C28] px-1.5 py-0.5 rounded text-[8px] font-black uppercase">
+                            {item.category || '일반'}
+                          </span>
+                          <span className="text-stone-300">•</span>
+                          <span className="text-stone-500 font-mono font-bold flex items-center gap-0.5">
+                            <Calendar size={10} />
+                            {formatDate(item.createdAt)}
+                          </span>
+                          <span className="text-stone-300">•</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[8px] font-black ${item.isPublic !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-stone-100 text-stone-500'}`}>
+                            {item.isPublic !== false ? '공개됨' : '비공개'}
+                          </span>
+                        </div>
+                        
+                        <h5 className="text-xs font-black text-stone-900 mt-2 truncate leading-snug">
+                          {item.title}
+                        </h5>
+                      </div>
+
+                      <div className="flex items-center space-x-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditNotice(item)}
+                          className="p-1.5 rounded-lg bg-stone-50 hover:bg-stone-150 text-stone-600 transition cursor-pointer"
+                          title="공지 수정"
+                        >
+                          <Edit size={11} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveNotice(item.id)}
+                          className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-[#E85C28] transition cursor-pointer"
+                          title="공지 삭제"
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="text-[10px] text-stone-650 leading-relaxed font-sans font-medium whitespace-pre-wrap line-clamp-3 bg-stone-50 p-2.5 rounded-lg border border-stone-150">
+                      {item.content}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>

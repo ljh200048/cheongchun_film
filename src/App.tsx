@@ -368,10 +368,16 @@ export default function App() {
     const colPath = 'notices';
     const id = `notice-${Date.now()}`;
     try {
+      const isPub = data.isPublic !== false;
+      const cleanData = cleanUndefined(data);
       await setDoc(doc(db, colPath, id), {
-        ...cleanUndefined(data),
-        createdAt: serverTimestamp()
+        ...cleanData,
+        isPublic: isPub,
+        isPublished: isPub,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
       });
+      alert('공지사항이 등록되었습니다.');
     } catch (err) {
       handleFirestoreError(err, OperationType.CREATE, colPath);
     }
@@ -380,10 +386,15 @@ export default function App() {
   const handleEditNotice = async (id: string, data: Partial<Notice>) => {
     const colPath = 'notices';
     try {
+      const cleanData: any = cleanUndefined(data);
+      if (data.isPublic !== undefined) {
+        cleanData.isPublished = data.isPublic !== false;
+      }
       await updateDoc(doc(db, colPath, id), {
-        ...cleanUndefined(data),
+        ...cleanData,
         updatedAt: serverTimestamp()
       });
+      alert('공지사항이 수정되었습니다.');
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `${colPath}/${id}`);
     }
@@ -393,6 +404,7 @@ export default function App() {
     const colPath = 'notices';
     try {
       await deleteDoc(doc(db, colPath, id));
+      alert('공지사항이 삭제되었습니다.');
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, `${colPath}/${id}`);
     }
@@ -687,12 +699,16 @@ export default function App() {
                 productionApps={productionApps}
                 supporterApps={supporterApps}
                 inquiries={inquiries}
+                notices={notices}
                 onUpdateProductionStatus={handleUpdateProductionStatus}
                 onDeleteProduction={handleDeleteProduction}
                 onUpdateSupporterStatus={handleUpdateSupporterStatus}
                 onDeleteSupporter={handleDeleteSupporter}
                 onAnswerInquiry={handleAnswerInquiry}
                 onDeleteInquiry={handleDeleteInquiry}
+                onAddNotice={handleAddNotice}
+                onEditNotice={handleEditNotice}
+                onDeleteNotice={handleDeleteNotice}
               />
             </div>
           ) : (

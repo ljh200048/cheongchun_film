@@ -17,6 +17,7 @@ export interface Notice {
   content: string;
   category: string;
   isPublic: boolean;
+  isPublished?: boolean;
   createdAt: any;
   updatedAt?: any;
 }

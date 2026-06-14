@@ -46,6 +46,7 @@ service cloud.firestore {
           && data.content is string && data.content.size() <= 50000
           && data.category is string && data.category.size() >= 1 && data.category.size() <= 100
           && data.isPublic is bool
+          && (!('isPublished' in data) || data.isPublished is bool)
           && data.createdAt is timestamp
           && (!('updatedAt' in data) || data.updatedAt is timestamp);
     }
