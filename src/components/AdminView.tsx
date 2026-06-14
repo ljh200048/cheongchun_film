@@ -30,6 +30,21 @@ export default function AdminView({
   const [activeTab, setActiveTab] = useState<AdminTab>('production');
   const [draftReplies, setDraftReplies] = useState<{ [id: string]: string }>({});
 
+  const getMs = (dateVal: any) => {
+    if (!dateVal) return 0;
+    if (typeof dateVal.toDate === 'function') {
+      return dateVal.toDate().getTime();
+    }
+    if (dateVal.seconds) {
+      return dateVal.seconds * 1000;
+    }
+    const parsed = new Date(dateVal).getTime();
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const sortedProductionApps = [...productionApps].sort((a, b) => getMs(b.createdAt) - getMs(a.createdAt));
+  const sortedSupporterApps = [...supporterApps].sort((a, b) => getMs(b.createdAt) - getMs(a.createdAt));
+
   const handleStatusChangeProduction = async (id: string, newStatus: any) => {
     try {
       await onUpdateProductionStatus(id, newStatus);
@@ -165,12 +180,12 @@ export default function AdminView({
       <div className="p-4 flex-grow overflow-y-auto space-y-4">
         {/* Tab 1: 제작신청 리스트 */}
         {activeTab === 'production' && (
-          productionApps.length === 0 ? (
+          sortedProductionApps.length === 0 ? (
             <div className="text-center py-12 text-stone-500 text-xs">
               접수된 기록 제작 신청이 존재하지 않습니다.
             </div>
           ) : (
-            productionApps.map(item => (
+            sortedProductionApps.map(item => (
               <div
                 id={`admin-production-card-${item.id}`}
                 key={item.id}
@@ -247,12 +262,12 @@ export default function AdminView({
 
         {/* Tab 2: 서포터즈 목록 리스트 */}
         {activeTab === 'supporter' && (
-          supporterApps.length === 0 ? (
+          sortedSupporterApps.length === 0 ? (
             <div className="text-center py-12 text-stone-500 text-xs">
               접수된 서포터즈 지원서가 존재하지 않습니다.
             </div>
           ) : (
-            supporterApps.map(item => (
+            sortedSupporterApps.map(item => (
               <div
                 id={`admin-supporter-card-${item.id}`}
                 key={item.id}
