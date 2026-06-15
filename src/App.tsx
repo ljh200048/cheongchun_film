@@ -39,6 +39,7 @@ import SupportersView from './components/SupportersView';
 import NoticeView from './components/NoticeView';
 import InquiryView from './components/InquiryView';
 import AdminView from './components/AdminView';
+import PrivacyView from './components/PrivacyView';
 
 // Bottom Navigation items
 import { Compass, Film, Calendar, HelpCircle, Heart, ShieldCheck, LogOut, Sparkles } from 'lucide-react';
@@ -91,6 +92,8 @@ export default function App() {
     const path = window.location.pathname;
     if (path === '/admin' || path.startsWith('/admin')) {
       setCurrentView('admin');
+    } else if (path === '/privacy' || path.startsWith('/privacy')) {
+      setCurrentView('privacy');
     }
   }, []);
 
@@ -424,6 +427,8 @@ export default function App() {
       await setDoc(doc(db, colPath, id), {
         ...cleanUndefined(data),
         status: 'received',
+        privacyConsent: true,
+        consentAt: serverTimestamp(),
         createdAt: serverTimestamp()
       });
     } catch (err) {
@@ -456,6 +461,8 @@ export default function App() {
       await setDoc(doc(db, colPath, id), {
         ...cleanUndefined(data),
         status: 'received',
+        privacyConsent: true,
+        consentAt: serverTimestamp(),
         createdAt: serverTimestamp()
       });
     } catch (err) {
@@ -488,6 +495,8 @@ export default function App() {
       await setDoc(doc(db, colPath, id), {
         ...cleanUndefined(data),
         status: 'received',
+        privacyConsent: true,
+        consentAt: serverTimestamp(),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -531,6 +540,7 @@ export default function App() {
       case 'notice': return '공지사항 아카이브';
       case 'inquiry': return '1:1 익명 질문방';
       case 'admin': return '독립 관리제어 콘솔';
+      case 'privacy': return '개인정보 처리방침';
       default: return '청춘필름';
     }
   };
@@ -654,11 +664,17 @@ export default function App() {
         )}
 
         {currentView === 'apply_production' && (
-          <RequestProductionView onSubmit={handleAddProductionApp} />
+          <RequestProductionView 
+            onSubmit={handleAddProductionApp} 
+            onNavigateToPrivacy={() => changeView('privacy')}
+          />
         )}
 
         {currentView === 'apply_supporters' && (
-          <SupportersView onSubmit={handleAddSupporterApp} />
+          <SupportersView 
+            onSubmit={handleAddSupporterApp} 
+            onNavigateToPrivacy={() => changeView('privacy')}
+          />
         )}
 
         {currentView === 'notice' && (
@@ -678,7 +694,12 @@ export default function App() {
             inquiries={inquiries}
             isAdmin={isAdmin}
             onAdd={handleAddInquiry}
+            onNavigateToPrivacy={() => changeView('privacy')}
           />
+        )}
+
+        {currentView === 'privacy' && (
+          <PrivacyView onBack={handleBack} />
         )}
 
         {currentView === 'admin' && (

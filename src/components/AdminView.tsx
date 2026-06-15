@@ -54,6 +54,7 @@ export default function AdminView({
   const [portfolioThumbnailUrl, setPortfolioThumbnailUrl] = useState('');
   const [portfolioVideoUrl, setPortfolioVideoUrl] = useState('');
   const [portfolioCreatorAge, setPortfolioCreatorAge] = useState<number>(24);
+  const [portfolioCommitMessage, setPortfolioCommitMessage] = useState('');
   const [isCompilingPortfolioImage, setIsCompilingPortfolioImage] = useState(false);
   const [editingPortfolioId, setEditingPortfolioId] = useState<string | null>(null);
 
@@ -64,6 +65,7 @@ export default function AdminView({
   const [noticeContent, setNoticeContent] = useState('');
   const [noticeCategory, setNoticeCategory] = useState('일반');
   const [noticeIsPublic, setNoticeIsPublic] = useState(true);
+  const [noticeCommitMessage, setNoticeCommitMessage] = useState('');
   const [editingNoticeId, setEditingNoticeId] = useState<string | null>(null);
   const [noticeImageUrl, setNoticeImageUrl] = useState('');
   const [isCompilingNoticeImage, setIsCompilingNoticeImage] = useState(false);
@@ -93,6 +95,7 @@ export default function AdminView({
     setPortfolioThumbnailUrl('');
     setPortfolioVideoUrl('');
     setPortfolioCreatorAge(24);
+    setPortfolioCommitMessage('');
     setEditingPortfolioId(null);
   };
 
@@ -111,7 +114,8 @@ export default function AdminView({
         thumbnailUrl: portfolioThumbnailUrl.trim(),
         imageUrl: portfolioThumbnailUrl.trim(),
         videoUrl: portfolioVideoUrl.trim() || undefined,
-        creatorAge: portfolioCreatorAge ? Number(portfolioCreatorAge) : undefined
+        creatorAge: portfolioCreatorAge ? Number(portfolioCreatorAge) : undefined,
+        commitMessage: portfolioCommitMessage.trim() || undefined
       };
 
       if (editingPortfolioId) {
@@ -134,6 +138,7 @@ export default function AdminView({
     setPortfolioThumbnailUrl(item.thumbnailUrl || item.imageUrl || '');
     setPortfolioVideoUrl(item.videoUrl || '');
     setPortfolioCreatorAge(item.creatorAge || 24);
+    setPortfolioCommitMessage(item.commitMessage || '');
   };
 
   const handleRemovePortfolio = async (id: string) => {
@@ -298,6 +303,7 @@ export default function AdminView({
     setNoticeCategory('일반');
     setNoticeIsPublic(true);
     setNoticeImageUrl('');
+    setNoticeCommitMessage('');
     setEditingNoticeId(null);
   };
 
@@ -315,7 +321,8 @@ export default function AdminView({
         category: noticeCategory,
         isPublic: noticeIsPublic,
         isPublished: noticeIsPublic,
-        imageUrl: noticeImageUrl || undefined
+        imageUrl: noticeImageUrl || undefined,
+        commitMessage: noticeCommitMessage.trim() || undefined
       };
 
       if (editingNoticeId) {
@@ -337,6 +344,7 @@ export default function AdminView({
     setNoticeCategory(item.category || '일반');
     setNoticeIsPublic(item.isPublic !== false);
     setNoticeImageUrl(item.imageUrl || '');
+    setNoticeCommitMessage(item.commitMessage || '');
   };
 
   const handleRemoveNotice = async (id: string) => {
@@ -889,6 +897,17 @@ export default function AdminView({
                   />
                 </div>
 
+                <div>
+                  <label className="block text-[8.5px] uppercase font-bold text-stone-500 mb-1">커밋 메시지 / 변경 내역 설명 (선택)</label>
+                  <input
+                    type="text"
+                    value={noticeCommitMessage}
+                    onChange={e => setNoticeCommitMessage(e.target.value)}
+                    placeholder="예: 모집 일정 변경 및 수암골 사진 썸네일 업데이트"
+                    className="w-full bg-stone-50 border border-stone-250 text-stone-900 text-xs rounded-lg p-2.5 font-bold focus:outline-none focus:border-[#E85C28]"
+                  />
+                </div>
+
                 {/* Notice Representative Image Upload */}
                 <div className="space-y-2 p-3 bg-stone-50 rounded-xl border border-stone-200">
                   <label className="block text-[8.5px] uppercase font-bold text-stone-600">대표 이미지 (Storage 연동)</label>
@@ -1019,6 +1038,14 @@ export default function AdminView({
                     <div className="text-[10px] text-stone-650 leading-relaxed font-sans font-medium whitespace-pre-wrap line-clamp-3 bg-stone-50 p-2.5 rounded-lg border border-stone-150">
                       {item.content}
                     </div>
+
+                    {item.commitMessage && (
+                      <div className="text-[9.5px] bg-[#E85C28]/5 border border-[#E85C28]/15 text-[#E85C28] p-2 rounded-lg font-mono font-bold flex items-center space-x-1.5 leading-none">
+                        <span className="shrink-0 text-[10px]">💬</span>
+                        <span className="shrink-0 text-stone-500">commit:</span>
+                        <span className="truncate text-stone-900">{item.commitMessage}</span>
+                      </div>
+                    )}
                   </div>
                 ))
               )}
@@ -1151,6 +1178,17 @@ export default function AdminView({
                   />
                 </div>
 
+                <div>
+                  <label className="block text-[8.5px] uppercase font-bold text-stone-500 mb-1">커밋 메시지 / 변경 내역 설명 (선택)</label>
+                  <input
+                    type="text"
+                    value={portfolioCommitMessage}
+                    onChange={e => setPortfolioCommitMessage(e.target.value)}
+                    placeholder="예: 초안 릴스 자막 수정 및 작가 이름 표기 변경"
+                    className="w-full bg-stone-50 border border-stone-250 text-stone-900 text-xs rounded-lg p-2.5 font-bold focus:outline-none focus:border-[#E85C28]"
+                  />
+                </div>
+
                 <div className="flex space-x-2 pt-1 border-t border-stone-100 mt-2">
                   <button
                     type="submit"
@@ -1230,6 +1268,14 @@ export default function AdminView({
                         <p className="text-[10px] text-stone-500 line-clamp-2 leading-relaxed mt-1">
                           {item.description}
                         </p>
+
+                        {item.commitMessage && (
+                          <div className="text-[9.5px] bg-[#E85C28]/5 border border-[#E85C28]/15 text-[#E85C28] p-1.5 rounded-lg font-mono font-bold flex items-center space-x-1 mt-1.5 leading-none">
+                            <span className="shrink-0 text-[10px]">💬</span>
+                            <span className="shrink-0 text-stone-500">commit:</span>
+                            <span className="truncate text-stone-900">{item.commitMessage}</span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex items-center justify-between mt-2 pt-2 border-t border-stone-100">

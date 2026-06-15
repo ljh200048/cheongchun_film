@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wifi, Battery, ChevronLeft, ShieldCheck, Film } from 'lucide-react';
+import { ChevronLeft, ShieldCheck, Film } from 'lucide-react';
 
 interface MobileFrameProps {
   children: React.ReactNode;
@@ -24,22 +24,6 @@ export default function MobileFrame({
   supporterApps = [],
   inquiries = []
 }: MobileFrameProps) {
-  // Simple currentTime state
-  const [time, setTime] = React.useState('12:00');
-
-  React.useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      let hours = now.getHours();
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const ampm = hours >= 12 ? 'PM' : 'AM';
-      hours = hours % 12 || 12;
-      setTime(`${hours}:${minutes} ${ampm}`);
-    };
-    updateTime();
-    const timer = setInterval(updateTime, 60000);
-    return () => clearInterval(timer);
-  }, []);
 
   const getRecentLogs = () => {
     const list: { name: string; type: string; ago: string; isNew?: boolean }[] = [];
@@ -85,10 +69,10 @@ export default function MobileFrame({
   const logs = getRecentLogs();
 
   return (
-    <div className="min-h-screen bg-[#ECE9E0] font-sans flex items-center justify-center p-4 lg:p-12 transition-colors duration-500 relative overflow-hidden text-[#1A1A1A]">
+    <div className="w-full min-h-[100dvh] bg-[#FDFCF8] sm:bg-[#ECE9E0] font-sans flex items-center justify-center sm:p-4 lg:p-12 transition-colors duration-500 relative overflow-hidden text-[#1A1A1A]">
       {/* Dynamic Ambient Background Elements */}
-      <div className="absolute -left-40 -top-40 w-96 h-96 rounded-full bg-vintage-accent opacity-5 blur-3xl pointer-events-none" />
-      <div className="absolute -right-40 -bottom-40 w-96 h-96 rounded-full bg-vintage-accent opacity-5 blur-3xl pointer-events-none" />
+      <div className="absolute -left-40 -top-40 w-96 h-96 rounded-full bg-vintage-accent opacity-5 blur-3xl pointer-events-none hidden sm:block" />
+      <div className="absolute -right-40 -bottom-40 w-96 h-96 rounded-full bg-vintage-accent opacity-5 blur-3xl pointer-events-none hidden sm:block" />
 
       {/* Decorative Film Edge Holes - brutalist print design accents */}
       <div className="absolute left-4 top-0 bottom-0 w-2 flex flex-col justify-around opacity-15 pointer-events-none hidden xl:flex">
@@ -102,7 +86,7 @@ export default function MobileFrame({
         ))}
       </div>
 
-      <div className="max-w-7xl w-full flex flex-col lg:flex-row items-center justify-between gap-8 xl:gap-12 relative z-10">
+      <div className="max-w-7xl w-full flex flex-col lg:flex-row items-center justify-center lg:justify-between gap-0 sm:gap-8 xl:gap-12 relative z-10">
         
         {/* Left Column: Bold Typography Display Title */}
         <div className="flex-1 flex flex-col justify-between py-6 self-stretch text-left max-w-lg hidden lg:flex font-serif">
@@ -133,28 +117,13 @@ export default function MobileFrame({
           </div>
         </div>
 
-        {/* Center Column: Main Smartphone Shell Device Wrapper */}
+        {/* Center Column: App Container */}
         <div 
           id="smartphone-shell"
-          className="relative w-full sm:w-[380px] lg:w-[365px] h-[100vh] sm:h-[820px] lg:h-[720px] sm:rounded-[48px] sm:border-[8px] sm:border-[#1A1A1A] bg-[#1A1A1A] flex flex-col shadow-[0_30px_70px_-15px_rgba(0,0,0,0.3)] overflow-hidden transition-all duration-300 relative shrink-0"
+          className="relative w-full h-[100dvh] sm:w-[420px] lg:w-[400px] sm:h-[820px] lg:h-[750px] sm:rounded-3xl sm:border sm:border-stone-200 bg-white flex flex-col sm:shadow-[0_20px_50px_-10px_rgba(0,0,0,0.06)] overflow-hidden transition-all duration-300 shrink-0"
         >
           {/* Film grain effect */}
           <div className="grain-overlay absolute inset-0 z-50 pointer-events-none opacity-[0.03]" />
-          
-          {/* System Bar (Camera punch & Indicators) */}
-          <div className="bg-[#1A1A1A] px-6 pt-3 pb-2 text-[10px] text-white/90 font-mono flex justify-between items-center select-none z-40 shrink-0 relative">
-            <span className="font-semibold tracking-tight">{time}</span>
-            
-            {/* Virtual Notch */}
-            <div className="hidden sm:block absolute left-1/2 -translate-x-1/2 top-1.5 h-3.5 w-24 bg-stone-900 rounded-full flex items-center justify-end px-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-stone-700" />
-            </div>
-
-            <div className="flex items-center space-x-1.5">
-              <Wifi size={11} className="opacity-90" />
-              <Battery size={11} className="opacity-90" />
-            </div>
-          </div>
 
           {/* Dynamic App Shell Header */}
           <div className="bg-white border-b border-stone-150 px-4 h-14 flex items-center justify-between z-40 select-none shrink-0 relative">

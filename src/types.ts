@@ -9,6 +9,7 @@ export interface Portfolio {
   imageUrl?: string;
   videoUrl?: string;
   creatorAge?: number;
+  commitMessage?: string;
   createdAt: any;
   updatedAt?: any;
 }
@@ -21,6 +22,7 @@ export interface Notice {
   imageUrl?: string;
   isPublic: boolean;
   isPublished?: boolean;
+  commitMessage?: string;
   createdAt: any;
   updatedAt?: any;
 }
@@ -36,6 +38,8 @@ export interface ProductionApplication {
   preferredType: CategoryType;
   status: 'received' | 'reviewed' | 'accepted' | 'declined' | 'contacted' | 'completed';
   createdAt: any;
+  privacyConsent?: boolean;
+  consentAt?: any;
 }
 
 export interface SupporterApplication {
@@ -52,6 +56,8 @@ export interface SupporterApplication {
   interests?: string;
   availableDays?: string;
   createdAt: any;
+  privacyConsent?: boolean;
+  consentAt?: any;
 }
 
 export interface Inquiry {
@@ -64,6 +70,8 @@ export interface Inquiry {
   status: 'received' | 'checking' | 'completed' | 'onhold';
   createdAt: any;
   updatedAt?: any;
+  privacyConsent?: boolean;
+  consentAt?: any;
 }
 
 export type ViewType = 
@@ -75,4 +83,5 @@ export type ViewType =
   | 'notice' 
   | 'notice_detail'
   | 'inquiry' 
-  | 'admin';
+  | 'admin'
+  | 'privacy';

@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Host & Sitemap placeholder
+Sitemap: https://chungchun-film.co.kr/sitemap.xml

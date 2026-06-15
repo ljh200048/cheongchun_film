@@ -13,10 +13,12 @@ interface SupportersViewProps {
     region: string;
     interests: string;
     availableDays: string;
+    privacyConsent: boolean;
   }) => Promise<void>;
+  onNavigateToPrivacy?: () => void;
 }
 
-export default function SupportersView({ onSubmit }: SupportersViewProps) {
+export default function SupportersView({ onSubmit, onNavigateToPrivacy }: SupportersViewProps) {
   // Supporter submission form state
   const [applicantName, setApplicantName] = useState('');
   const [age, setAge] = useState<number>(24);
@@ -28,6 +30,7 @@ export default function SupportersView({ onSubmit }: SupportersViewProps) {
   const [region, setRegion] = useState('');
   const [interests, setInterests] = useState('기획/촬영 Crew');
   const [availableDays, setAvailableDays] = useState('');
+  const [privacyConsent, setPrivacyConsent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -36,6 +39,11 @@ export default function SupportersView({ onSubmit }: SupportersViewProps) {
 
     if (!applicantName || !phone || !email || !introduction || !motive || !region || !interests || !availableDays) {
       alert('필수 입력 항목들을 전부 작성해주시기 바랍니다.');
+      return;
+    }
+
+    if (!privacyConsent) {
+      alert('개인정보 수집 및 이용에 동의해야 신청할 수 있습니다.');
       return;
     }
 
@@ -51,7 +59,8 @@ export default function SupportersView({ onSubmit }: SupportersViewProps) {
         instagramUrl: instagramUrl || "",
         region,
         interests,
-        availableDays
+        availableDays,
+        privacyConsent
       });
       alert('서포터즈 신청이 완료되었습니다.');
       setIsSuccess(true);
@@ -274,12 +283,44 @@ export default function SupportersView({ onSubmit }: SupportersViewProps) {
           />
         </div>
 
+        {/* 개인정보 수집 및 이용 동의 */}
+        <div className="bg-stone-50 border border-stone-200 p-3.5 rounded-2xl space-y-3">
+          <div className="text-[10px] leading-relaxed text-stone-600 space-y-1 bg-white p-3 rounded-xl border border-stone-150 shadow-inner">
+            <div className="flex justify-between items-center border-b border-stone-100 pb-1 mb-1">
+              <p className="font-extrabold text-stone-900 text-[10.5px]">개인정보 수집 및 이용 동의 안내</p>
+              {onNavigateToPrivacy && (
+                <button
+                  type="button"
+                  onClick={onNavigateToPrivacy}
+                  className="text-[9.5px] font-bold text-[#E85C28] hover:underline cursor-pointer"
+                >
+                  개인정보 처리방침 보기
+                </button>
+              )}
+            </div>
+            <p>• <strong>수집 항목:</strong> 이름, 연락처, 이메일, 인스타그램 계정/SNS, 신청 내용</p>
+            <p>• <strong>이용 목적:</strong> 신청 확인, 일정 및 장소 조율, 제작/상담 응답</p>
+            <p>• <strong>보관 기간:</strong> <span className="text-[#E85C28] font-bold">신청일로부터 1년</span> (이후 즉시 파기)</p>
+          </div>
+          <label className="flex items-start gap-2 cursor-pointer group select-none">
+            <input
+              type="checkbox"
+              checked={privacyConsent}
+              onChange={e => setPrivacyConsent(e.target.checked)}
+              className="mt-0.5 rounded border-stone-300 text-[#E85C28] focus:ring-[#E85C28] h-4 w-4 accent-[#E85C28] cursor-pointer"
+            />
+            <span className="text-[11.5px] font-bold text-stone-800 group-hover:text-stone-950 transition-colors">
+              개인정보 수집 및 이용에 동의합니다. <span className="text-[#E85C28] font-black ml-0.5">*</span>
+            </span>
+          </label>
+        </div>
+
         {/* Submit button */}
         <button
           type="submit"
           id="submit-supporters-form"
           disabled={isSubmitting}
-          className="w-full bg-[#E85C28] disabled:opacity-50 text-white font-bold p-3 rounded-xl text-xs tracking-widest uppercase transition-all duration-300 mt-6 shadow-sm cursor-pointer"
+          className="w-full bg-[#E85C28] disabled:opacity-50 text-white font-bold p-3 rounded-xl text-xs tracking-widest uppercase transition-all duration-300 mt-4 shadow-sm cursor-pointer"
         >
           {isSubmitting ? '서류 안전 봉합 및 전송 중...' : '청춘 크루 지원표 제출하기'}
         </button>
