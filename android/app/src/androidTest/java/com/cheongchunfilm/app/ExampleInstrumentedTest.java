@@ -1,4 +1,4 @@
-package com.cheongchunfilm.mobile;
+package com.cheongchunfilm.app;
 
 import static org.junit.Assert.*;
 
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
 
-        assertEquals("com.cheongchunfilm.mobile", appContext.getPackageName());
+        assertEquals("com.cheongchunfilm.app", appContext.getPackageName());
     }
 }

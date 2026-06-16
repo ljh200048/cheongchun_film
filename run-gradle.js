@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 
 try {
   console.log('Starting synchronous Gradle build...');
-  const out = execSync('cd android && JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ANDROID_HOME=/opt/android-sdk ./gradlew bundleRelease', {
+  const out = execSync('cd android && JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ANDROID_HOME=/opt/android-sdk ./gradlew bundleRelease assembleRelease', {
     encoding: 'utf8',
     stdio: 'pipe'
   });

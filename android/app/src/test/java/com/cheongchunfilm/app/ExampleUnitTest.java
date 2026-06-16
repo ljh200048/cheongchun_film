@@ -1,4 +1,4 @@
-package com.cheongchunfilm.mobile;
+package com.cheongchunfilm.app;
 
 import static org.junit.Assert.*;
 
