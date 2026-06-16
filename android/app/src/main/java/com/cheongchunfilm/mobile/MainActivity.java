@@ -1,4 +1,4 @@
-package com.cheongchunfilm.app;
+package com.cheongchunfilm.mobile;
 
 import com.getcapacitor.BridgeActivity;
 

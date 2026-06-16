@@ -1,11 +1,20 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.cheongchunfilm.app',
+  appId: 'com.cheongchunfilm.mobile',
   appName: '청춘필름',
   webDir: 'dist',
   server: {
-    androidScheme: 'https'
+    androidScheme: 'https',
+    url: 'https://cheongchun.cloud',
+    allowNavigation: [
+      'cheongchun.cloud',
+      '*.cheongchun.cloud',
+      'cheongchunfilm.netlify.app',
+      '*.netlify.app',
+      'cheongchunfilm-mobile.firebaseapp.com',
+      '*.firebaseapp.com'
+    ]
   }
 };
 
