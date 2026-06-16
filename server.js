@@ -28,9 +28,32 @@ function formatBytes(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
+// Helper to get mime type for static files
+function getMimeType(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  switch (ext) {
+    case '.html': return 'text/html; charset=utf-8';
+    case '.css': return 'text/css; charset=utf-8';
+    case '.js': return 'application/javascript; charset=utf-8';
+    case '.json': return 'application/json; charset=utf-8';
+    case '.svg': return 'image/svg+xml';
+    case '.png': return 'image/png';
+    case '.jpg': return 'image/jpeg';
+    case '.jpeg': return 'image/jpeg';
+    case '.gif': return 'image/gif';
+    case '.ico': return 'image/x-icon';
+    case '.woff': return 'font/woff';
+    case '.woff2': return 'font/woff2';
+    case '.ttf': return 'font/ttf';
+    default: return 'application/octet-stream';
+  }
+}
+
 const server = http.createServer((req, res) => {
+  const pathname = req.url.split('?')[0];
+
   // ROUTE: Download APK File
-  if (req.url === '/download-apk') {
+  if (pathname === '/download-apk') {
     if (fs.existsSync(apkPath)) {
       const stat = fs.statSync(apkPath);
       res.writeHead(200, {
@@ -54,7 +77,7 @@ const server = http.createServer((req, res) => {
             <div class="bg-[#1f2833] p-8 rounded-2xl shadow-xl max-w-md w-full border border-red-500/30 text-center">
               <h2 class="text-2xl font-bold text-red-500 mb-4 font-sans">APK 파일을 찾을 수 없습니다</h2>
               <p class="text-sm text-gray-400 mb-6 font-sans">아직 안드로이드 앱 빌드가 완료되지 않았거나 APK 파일이 누락되었습니다.</p>
-              <a href="/" class="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-6 rounded-lg transition-colors inline-block font-sans">대시보드로 가기</a>
+              <a href="/downloads" class="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-6 rounded-lg transition-colors inline-block font-sans">대시보드로 가기</a>
             </div>
           </body>
         </html>
@@ -64,7 +87,7 @@ const server = http.createServer((req, res) => {
   }
 
   // ROUTE: Download AAB File
-  if (req.url === '/download-aab') {
+  if (pathname === '/download-aab') {
     if (fs.existsSync(aabPath)) {
       const stat = fs.statSync(aabPath);
       res.writeHead(200, {
@@ -88,7 +111,7 @@ const server = http.createServer((req, res) => {
             <div class="bg-[#1f2833] p-8 rounded-2xl shadow-xl max-w-md w-full border border-red-500/30 text-center">
               <h2 class="text-2xl font-bold text-red-500 mb-4 font-sans">AAB 파일을 찾을 수 없습니다</h2>
               <p class="text-sm text-gray-400 mb-6 font-sans">아직 안드로이드 앱 빌드가 완료되지 않았거나 파일이 누락되었습니다.</p>
-              <a href="/" class="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-6 rounded-lg transition-colors inline-block font-sans">대시보드로 가기</a>
+              <a href="/downloads" class="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-6 rounded-lg transition-colors inline-block font-sans">대시보드로 가기</a>
             </div>
           </body>
         </html>
@@ -97,8 +120,8 @@ const server = http.createServer((req, res) => {
     }
   }
 
-  // ROUTE: Download Center UI Dashboard (Root)
-  if (req.url === '/' || req.url === '/index.html') {
+  // ROUTE: Download Center UI Dashboard (Now on /downloads instead of root)
+  if (pathname === '/downloads' || pathname === '/downloads/' || pathname === '/downloads/index.html') {
     let aabExists = false;
     let aabSize = 'Unknown Size';
     let aabModified = 'N/A';
@@ -373,9 +396,26 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Fallback for everything else
-  const filePath = path.join(__dirname, 'dist', 'index.html');
-  fs.readFile(filePath, (err, content) => {
+  // ROUTE: Static Files serving from /dist (e.g. /assets/..., /favicon.svg, /manifest.json)
+  const distPath = path.join(__dirname, 'dist');
+  const safePath = path.normalize(path.join(distPath, pathname)).replace(/^(\.\.(\/|\\))+/, '');
+
+  if (safePath.startsWith(distPath)) {
+    try {
+      if (fs.existsSync(safePath) && fs.statSync(safePath).isFile()) {
+        const mimeType = getMimeType(safePath);
+        res.writeHead(200, { 'Content-Type': mimeType });
+        fs.createReadStream(safePath).pipe(res);
+        return;
+      }
+    } catch (e) {
+      console.error('Error serving static file:', safePath, e.message);
+    }
+  }
+
+  // Fallback for everything else (Single Page App index.html routing)
+  const indexPath = path.join(distPath, 'index.html');
+  fs.readFile(indexPath, (err, content) => {
     if (err) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end('<html><head><script>window.location.href="https://cheongchun.cloud";</script></head><body>Redirecting to Cheongchun Film...</body></html>');
