@@ -1,4 +1,4 @@
-package com.getcapacitor.myapp;
+package com.cheongchunfilm.mobile;
 
 import static org.junit.Assert.*;
 
