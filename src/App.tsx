@@ -63,8 +63,16 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [adminWarning, setAdminWarning] = useState<string | null>(null);
+  const [isSandboxBypassActive, setIsSandboxBypassActive] = useState(false);
 
-  const isAdmin = user !== null && user.email === 'lch200048@gmail.com';
+  const isAisSandboxUrl = typeof window !== 'undefined' && (
+    window.location.hostname.includes('run.app') || 
+    window.location.hostname.includes('localhost') ||
+    window.location.hostname.includes('web.app') ||
+    window.location.hostname.includes('firebaseapp.com')
+  );
+
+  const isAdmin = (user !== null && user.email === 'lch200048@gmail.com') || isSandboxBypassActive;
 
   // Navigation push state
   const changeView = (next: ViewType) => {
@@ -135,8 +143,15 @@ export default function App() {
         setAdminWarning('이메일 lch200048@gmail.com 계정으로만 관리자 진입 권한이 부과됩니다.');
         setTimeout(() => setAdminWarning(null), 5005);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Authentication Trigger Warning: ', e);
+      if (e?.code === 'auth/unauthorized-domain' || String(e).includes('unauthorized-domain')) {
+        setAdminWarning('Firebase 오류: 인증 승인되지 않은 도메인입니다. Firebase 콘솔(Authentication -> 설정 -> 승인된 도메인)에 현재 AIS 도메인(ais-dev-..., ais-pre-...) 및 localhost를 추가해 주셔야 로그인이 가능합니다.');
+        setTimeout(() => setAdminWarning(null), 12000);
+      } else {
+        setAdminWarning(`인증 오류 발생: ${e?.message || e}`);
+        setTimeout(() => setAdminWarning(null), 6000);
+      }
     }
   };
 
@@ -152,6 +167,7 @@ export default function App() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      setIsSandboxBypassActive(false);
       setCurrentView('home');
       setHistory([]);
     } catch (e) {
@@ -776,6 +792,23 @@ export default function App() {
                 </svg>
                 <span>Google 계정으로 로그인</span>
               </button>
+
+              {isAisSandboxUrl && (
+                <button
+                  id="admin-sandbox-bypass-btn"
+                  onClick={() => {
+                    setIsSandboxBypassActive(true);
+                    setAdminWarning('개발 임시 우회 로그인이 승인되었습니다 (관리자 계정: lch200048@gmail.com).');
+                    setTimeout(() => setAdminWarning(null), 5000);
+                  }}
+                  className="mt-3 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-bold transition-all duration-300 shadow-md flex items-center justify-center space-x-2 w-full max-w-[245px] cursor-pointer active:scale-95"
+                >
+                  <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  <span>[AIS 개발전용] 샌드박스 우회 로그인</span>
+                </button>
+              )}
             </div>
           )
         )}
