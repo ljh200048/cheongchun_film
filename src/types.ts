@@ -76,6 +76,10 @@ export interface Inquiry {
 
 export type ViewType = 
   | 'home' 
+  | 'friends'
+  | 'chats'
+  | 'rooms'
+  | 'my'
   | 'about' 
   | 'portfolio' 
   | 'apply_production' 
@@ -85,3 +89,53 @@ export type ViewType =
   | 'inquiry' 
   | 'admin'
   | 'privacy';
+
+// EearTalk Types
+export interface FeedItem {
+  id: string;
+  authorName: string;
+  authorEmail: string;
+  authorPic?: string;
+  content: string;
+  likes: string[]; // List of user emails or IDs
+  comments: {
+    id: string;
+    authorName: string;
+    content: string;
+    createdAt: any;
+  }[];
+  createdAt: any;
+}
+
+export interface FriendItem {
+  id: string;
+  name: string;
+  email: string;
+  bio: string;
+  region: string;
+  isOnline: boolean;
+  photoUrl?: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  senderId: string; // email or unique ID
+  senderName: string;
+  receiverId: string; // email, or room id
+  message: string;
+  createdAt: any;
+}
+
+export interface GatheringRoom {
+  id: string;
+  title: string;
+  description: string;
+  hostName: string;
+  hostEmail: string;
+  category: string; // e.g. "라이딩", "카페", "공부", "기타"
+  memberCount: number;
+  members: string[]; // List of Emails
+  maxMembers: number;
+  createdAt: any;
+}
+
